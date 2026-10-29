@@ -80,9 +80,96 @@ body { min-height: 100%; font-family: ui-sans-serif, system-ui, sans-serif; }
 }
 @media (prefers-color-scheme: dark) { html { color-scheme: dark; } }
 
+/* ─── Theme transition — smooth cross-fade on every theme-sensitive property */
+html {
+  transition:
+    background-color 0.35s ease,
+    color            0.35s ease;
+}
+*, *::before, *::after {
+  transition:
+    background-color 0.35s ease,
+    color            0.35s ease,
+    border-color     0.35s ease,
+    box-shadow       0.35s ease;
+}
+/* Don't animate things where motion looks wrong */
+.switch-thumb,
+.switch-track,
+button,
+svg,
+input,
+canvas {
+  transition-duration: 0.15s !important;
+}
+
 /* ─── Base ───────────────────────────────────────────────────────────────── */
 body { background-color: var(--background); color: var(--foreground); }
 *, *::before, *::after { border-color: var(--border); }
+
+/* ─── Theme toggle — fixed top-right, always visible ────────────────────── */
+#theme-toggle-fixed {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+}
+
+/* The pill track */
+.theme-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 3.75rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.4s ease, border-color 0.4s ease;
+}
+.theme-toggle.is-dark {
+  background: var(--muted);
+}
+.theme-toggle:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+
+/* Circular thumb with icon inside */
+.theme-toggle .t-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1),
+    background 0.4s ease;
+  will-change: transform;
+}
+.theme-toggle.is-dark .t-thumb {
+  transform: translateX(1.75rem);
+  background: var(--chat-tool);
+}
+
+/* Sun — light mode */
+.theme-toggle .t-sun {
+  display: flex; align-items: center; justify-content: center;
+}
+.theme-toggle.is-dark .t-sun { display: none; }
+
+/* Moon — dark mode */
+.theme-toggle .t-moon {
+  display: none; align-items: center; justify-content: center;
+}
+.theme-toggle.is-dark .t-moon { display: flex; }
 
 /* ─── Screen routing ─────────────────────────────────────────────────────── */
 .screen { display: none; }
@@ -223,6 +310,29 @@ body { background-color: var(--background); color: var(--foreground); }
 .chat-error {
   padding: 0.5rem 1rem; text-align: center;
   font-size: 0.875rem; color: var(--destructive);
+}
+
+/* ─── Toast notification ─────────────────────────────────────────────────── */
+#app-toast {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 0.8125rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+  z-index: 200;
+}
+#app-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Settings bar */
@@ -392,14 +502,27 @@ body { background-color: var(--background); color: var(--foreground); }
 </head>
 <body>
 
+<!-- ── Toast notification ───────────────────────────────────────────────── -->
+<div id="app-toast" role="status" aria-live="polite"></div>
+
+<!-- ── Single fixed theme toggle — always visible on every screen ────────── -->
+<div id="theme-toggle-fixed">
+  <label id="theme-btn" class="theme-toggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="Switch to dark mode" title="Switch to dark mode" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTheme();}">
+    <span class="t-thumb" aria-hidden="true">
+      <span class="t-sun">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>
+      </span>
+      <span class="t-moon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span>
+    </span>
+  </label>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════════════
      HOME SCREEN
 ═══════════════════════════════════════════════════════════════════════ -->
 <div id="screen-home" class="screen active font-lexend">
-  <!-- Theme toggle — top right of home screen -->
-  <div style="display:flex;justify-content:flex-end;padding:1rem 1rem 0;max-width:56rem;margin:0 auto;">
-    <button id="theme-btn-home" class="btn btn-ghost btn-icon" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark / light mode" style="font-size:1.25rem;">🌙</button>
-  </div>
   <div class="home-inner" style="padding-top:0.5rem;">
     <h1 class="home-h1">Note to Self</h1>
     <p class="home-subtitle">Be the person you want to talk to. Your notes stay on your device, never sent to us.</p>
@@ -461,7 +584,6 @@ body { background-color: var(--background); color: var(--foreground); }
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.35rem;">
       <div style="display:flex;gap:0.25rem;">
-        <button id="theme-btn-chat" class="btn btn-ghost btn-icon" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark / light mode" style="color:var(--chat-tool);font-size:1.1rem;">🌙</button>
         <button class="btn btn-ghost btn-icon" id="btn-settings" onclick="toggleSettings()" aria-label="Chat settings" title="Chat settings" style="color:var(--chat-tool)">
           <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
@@ -759,12 +881,14 @@ function toggleTheme() {
 
 function updateThemeButtons() {
   const isDark = document.documentElement.classList.contains('dark');
-  const icon = isDark ? '☀️' : '🌙';
   const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
-  ['theme-btn-home','theme-btn-chat'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) { btn.textContent = icon; btn.setAttribute('aria-label', label); btn.title = label; }
-  });
+  const el = document.getElementById('theme-btn');
+  if (el) {
+    el.classList.toggle('is-dark', isDark);
+    el.setAttribute('aria-label', label);
+    el.title = label;
+    el.setAttribute('aria-checked', String(isDark));
+  }
 }
 
 /* ── Utils ────────────────────────────────────────────────────────────────── */
@@ -960,7 +1084,7 @@ function sendMessage(e) {
     pushMsg({ text: trimmed });
     inp.value = '';
     document.getElementById('btn-send').disabled = true;
-    advanceOnboarding();
+    advanceOnboarding(trimmed);
     renderMessages();
     persistChat();
     return;
@@ -1061,6 +1185,8 @@ function clearChat() {
 /* ── Save toggle ──────────────────────────────────────────────────────────── */
 function onSaveToggle(enabled) {
   saveEnabled = enabled;
+  // When saving is turned off, remove all cached data including guide-done flag
+  if (!enabled) localStorage.removeItem(GUIDE_DONE_KEY);
   updateStatusLine();
   persistChat();
 }
@@ -1077,8 +1203,10 @@ function persistChat() {
       localStorage.setItem(SAVE_KEY, 'true');
       localStorage.setItem(DATA_KEY, JSON.stringify({ messages, scheduled }));
     } else {
+      // No saving — wipe all message + guide-done cache so every session starts fresh
       localStorage.removeItem(SAVE_KEY);
       localStorage.removeItem(DATA_KEY);
+      localStorage.removeItem(GUIDE_DONE_KEY);
     }
   } catch(err) {
     showError('Could not save on this device. Browser storage may be full or blocked.');
@@ -1116,14 +1244,16 @@ function loadAll() {
   }
 
   // Guide state
-  guideDone    = localStorage.getItem(GUIDE_DONE_KEY) === 'true';
+  // If saving is off, always treat the guide as not-yet-done (fresh session)
   guideEnabled = localStorage.getItem(GUIDE_ON_KEY) !== 'false';
+  guideDone    = saveEnabled ? localStorage.getItem(GUIDE_DONE_KEY) === 'true' : false;
+  if (!saveEnabled) localStorage.removeItem(GUIDE_DONE_KEY);
   document.getElementById('guide-toggle').checked = guideEnabled;
 
   updateStatusLine();
   renderMessages();
 
-  // Start guide on first visit
+  // Start guide every session when saving is off, or on first visit when saving is on
   if (guideEnabled && !guideDone) {
     setTimeout(startGuide, 800);
   }
@@ -1134,23 +1264,48 @@ function showError(msg) {
   el.style.display = msg ? '' : 'none';
 }
 
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('app-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
 /* ── Guide toggle ─────────────────────────────────────────────────────────── */
 function onGuideToggle(enabled) {
   guideEnabled = enabled;
   localStorage.setItem(GUIDE_ON_KEY, enabled ? 'true' : 'false');
   if (!enabled) {
-    // Cancel in-progress guide
+    // Cancel in-progress guide timers
     guideTimers.forEach(clearTimeout);
     guideTimers = [];
     awaitingFeelingReply = false;
-    localStorage.setItem(GUIDE_DONE_KEY, 'true');
+    onboardingStep = 0;
+    onboardingSteps = [];
+    // Remove all guide messages the user hasn't replied to yet (guide bubbles only)
+    const hadUserReply = messages.some(m => !m.guide && !m.auto);
+    if (!hadUserReply) {
+      // No user message yet — wipe every guide bubble entirely
+      messages = messages.filter(m => !m.guide);
+    }
+    renderMessages();
+    persistChat();
+    // Only persist guideDone when saving is on
+    if (saveEnabled) localStorage.setItem(GUIDE_DONE_KEY, 'true');
     guideDone = true;
+    // Notify the user
+    showToast('Guide turned off — your space is fully private 🔒');
   } else {
-    // Re-enable: clear done flag, note restarts next visit
+    // Re-enable: clear done flag and start the guide immediately
     localStorage.removeItem(GUIDE_DONE_KEY);
     guideDone = false;
-    pushMsg({ text: 'Guide will restart on your next visit.', guide: true });
-    renderMessages();
+    awaitingFeelingReply = false;
+    setTimeout(startGuide, 400);
+    showToast('Guide turned on ✨');
   }
 }
 
@@ -1213,15 +1368,15 @@ function runGuideResponse(input) {
 }
 
 // Called when user sends a message while onboarding steps are in progress.
-// Advances to the next step (unless user says "skip").
-function advanceOnboarding() {
-  const inp = document.getElementById('msg-input').value.trim().toLowerCase();
+// Answers questions in place; only advances when the reply is a confirmation.
+function advanceOnboarding(raw) {
+  const inp = (raw || '').toLowerCase();
 
   // "skip" exits onboarding immediately
   if (inp === 'skip') {
     onboardingStep = -1;
     onboardingSteps = [];
-    localStorage.setItem(GUIDE_DONE_KEY, 'true');
+    if (saveEnabled) localStorage.setItem(GUIDE_DONE_KEY, 'true');
     guideDone = true;
     setTimeout(() => {
       pushGuide('No problem! You can explore everything on your own. I\'m still here if you have questions. 🙂');
@@ -1230,11 +1385,32 @@ function advanceOnboarding() {
     return;
   }
 
+  // Detect questions or confused messages — answer them without advancing the step
+  const isQuestion = inp.includes('?') ||
+    /^(what|how|why|where|when|can i|do i|what are|what can|tell me|help|huh|i don|not sure|confused|options|option|don't understand|dont understand|explain)/.test(inp);
+
+  if (isQuestion) {
+    const stepHints = [
+      // step 0 — after empathy, waiting for "ready"
+      'You can reply anything to continue — I\'ll walk you through it step by step. Or say "skip" to explore on your own. 🙂',
+      // step 1 — waiting for user to open Auto-Replies
+      'Look for the 💬 speech-bubble button in the toolbar at the bottom of the screen. Tap it to open the Auto-Replies panel, then reply here when it\'s open!',
+      // step 2 — waiting for user to fill keyword + message
+      'In the Auto-Replies panel you\'ll see two fields:\n• Keywords — type a word matching your mood (like "' + (feelingWord || 'okayish') + '")\n• Message — write something kind to yourself\nTap "Add auto-reply" when done, then reply here!',
+      // step 3 — waiting for user to save and test
+      'Tap the blue "Add auto-reply" button, then tap "Save" at the top. Close the panel and type your keyword in the chat to see your message arrive. 🎉',
+    ];
+    const hint = stepHints[onboardingStep] ||
+      'Feel free to ask me anything — I\'m here to help. 🙂 Or say "skip" to explore on your own.';
+    setTimeout(() => { pushGuide(hint); renderMessages(); persistChat(); }, 700);
+    return; // do NOT advance onboardingStep
+  }
+
   if (onboardingStep >= onboardingSteps.length) {
     // All steps done
     onboardingStep = -1;
     onboardingSteps = [];
-    localStorage.setItem(GUIDE_DONE_KEY, 'true');
+    if (saveEnabled) localStorage.setItem(GUIDE_DONE_KEY, 'true');
     guideDone = true;
     return;
   }
@@ -1243,7 +1419,7 @@ function advanceOnboarding() {
     pushGuide(onboardingSteps[onboardingStep]);
     onboardingStep++;
     if (onboardingStep >= onboardingSteps.length) {
-      localStorage.setItem(GUIDE_DONE_KEY, 'true');
+      if (saveEnabled) localStorage.setItem(GUIDE_DONE_KEY, 'true');
       guideDone = true;
       onboardingSteps = [];
     }
