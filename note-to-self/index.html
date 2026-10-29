@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Note to Self — Check in on yourself</title>
+  <meta name="description" content="Message yourself, schedule kind notes, or draw privately, with optional saving on your device." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body { min-height: 100%; font-family: ui-sans-serif, system-ui, sans-serif; }
+
+/* ─── Design tokens (verbatim from styles.css :root) ────────────────────── */
+:root {
+  --radius: 0.625rem;
+  --background:            oklch(0.975 0.008 90);
+  --foreground:            oklch(0.32 0.025 260);
+  --card:                  oklch(0.99 0.004 90);
+  --card-foreground:       oklch(0.32 0.025 260);
+  --popover:               oklch(0.99 0.004 90);
+  --popover-foreground:    oklch(0.32 0.025 260);
+  --primary:               oklch(0.58 0.07 290);
+  --primary-foreground:    oklch(0.99 0.004 90);
+  --secondary:             oklch(0.92 0.03 240);
+  --secondary-foreground:  oklch(0.35 0.04 250);
+  --muted:                 oklch(0.95 0.01 90);
+  --muted-foreground:      oklch(0.52 0.03 260);
+  --accent:                oklch(0.93 0.03 150);
+  --accent-foreground:     oklch(0.33 0.05 150);
+  --destructive:           oklch(0.577 0.245 27.325);
+  --destructive-foreground:oklch(0.984 0.003 247.858);
+  --border:                oklch(0.9 0.015 90);
+  --input:                 oklch(0.9 0.015 90);
+  --ring:                  oklch(0.7 0.06 240);
+  --scheduled:             oklch(0.92 0.05 150);
+  --scheduled-foreground:  oklch(0.35 0.06 150);
+  --chat-background:       oklch(0.98 0.008 90);
+  --chat-user:             oklch(0.87 0.055 240);
+  --chat-ink:              oklch(0.35 0.03 250);
+  --chat-reply:            oklch(0.91 0.05 150);
+  --chat-avatar:           oklch(0.92 0.035 290);
+  --chat-tool:             oklch(0.58 0.08 290);
+  --guide-bubble:          oklch(0.91 0.05 150);
+  --guide-avatar:          oklch(0.85 0.07 150);
+}
+.dark {
+  --background:            oklch(0.18 0.012 260);
+  --foreground:            oklch(0.96 0.008 90);
+  --card:                  oklch(0.23 0.015 260);
+  --card-foreground:       oklch(0.96 0.008 90);
+  --popover:               oklch(0.23 0.015 260);
+  --popover-foreground:    oklch(0.96 0.008 90);
+  --primary:               oklch(0.78 0.06 290);
+  --primary-foreground:    oklch(0.2 0.02 290);
+  --secondary:             oklch(0.3 0.03 240);
+  --secondary-foreground:  oklch(0.94 0.02 240);
+  --muted:                 oklch(0.28 0.015 90);
+  --muted-foreground:      oklch(0.7 0.02 260);
+  --accent:                oklch(0.3 0.03 150);
+  --accent-foreground:     oklch(0.93 0.03 150);
+  --destructive:           oklch(0.704 0.191 22.216);
+  --destructive-foreground:oklch(0.984 0.003 247.858);
+  --border:                oklch(1 0 0 / 10%);
+  --input:                 oklch(1 0 0 / 15%);
+  --ring:                  oklch(0.55 0.05 290);
+  --scheduled:             oklch(0.35 0.045 150);
+  --scheduled-foreground:  oklch(0.93 0.03 150);
+  --chat-background:       oklch(0.2 0.012 90);
+  --chat-user:             oklch(0.36 0.05 240);
+  --chat-ink:              oklch(0.92 0.02 250);
+  --chat-reply:            oklch(0.35 0.045 150);
+  --chat-avatar:           oklch(0.32 0.04 290);
+  --chat-tool:             oklch(0.72 0.07 290);
+  --guide-bubble:          oklch(0.35 0.045 150);
+  --guide-avatar:          oklch(0.3 0.06 150);
+}
+@media (prefers-color-scheme: dark) { html { color-scheme: dark; } }
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+body { background-color: var(--background); color: var(--foreground); }
+*, *::before, *::after { border-color: var(--border); }
+
+/* ─── Screen routing ─────────────────────────────────────────────────────── */
+.screen { display: none; }
+.screen.active { display: block; }
+#screen-chat.active { display: flex; }
+
+/* ─── Utility ────────────────────────────────────────────────────────────── */
+.font-lexend { font-family: "Lexend", ui-sans-serif, system-ui, sans-serif; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  font-size: 0.875rem; font-weight: 500; line-height: 1;
+  border: 1px solid transparent; border-radius: var(--radius);
+  padding: 0.5rem 1rem; cursor: pointer; transition: opacity 0.15s;
+  background: none; color: inherit; text-decoration: none;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary {
+  background-color: var(--primary); color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.btn-outline {
+  background-color: transparent; color: var(--foreground);
+  border-color: var(--border);
+}
+.btn-outline:hover:not(:disabled) { background-color: var(--muted); }
+.btn-ghost {
+  background-color: transparent; color: inherit; border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) { background-color: var(--muted); }
+.btn-lg { padding: 0.75rem 1.5rem; font-size: 1rem; min-height: 2.75rem; border-radius: calc(var(--radius) + 2px); }
+.btn-icon { padding: 0; width: 2.75rem; height: 2.75rem; border-radius: 9999px; flex-shrink: 0; }
+.btn-rounded-full { border-radius: 9999px; }
+
+/* ─── Switch (save toggle) ───────────────────────────────────────────────── */
+.switch-wrap { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.switch { position: relative; display: inline-block; width: 2.25rem; height: 1.25rem; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-track {
+  position: absolute; inset: 0; border-radius: 9999px;
+  background: var(--muted); border: 1px solid var(--border); transition: background 0.2s;
+}
+.switch input:checked + .switch-track { background: var(--primary); border-color: var(--primary); }
+.switch-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 0.875rem; height: 0.875rem; border-radius: 9999px;
+  background: white; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.switch input:checked ~ .switch-thumb { transform: translateX(1rem); }
+
+/* ─── HOME SCREEN ────────────────────────────────────────────────────────── */
+#screen-home {
+  min-height: 100dvh;
+  background-color: var(--background);
+  padding: 2.5rem 1rem;
+}
+@media (min-width: 640px) { #screen-home { padding: 4rem 1.5rem; } }
+.home-inner { max-width: 56rem; margin: 0 auto; text-align: center; }
+.home-h1 { font-size: 2.25rem; font-weight: 600; color: var(--foreground); }
+.home-subtitle { margin-top: 0.75rem; color: var(--muted-foreground); }
+.home-cta { margin-top: 2rem; }
+.home-h2 { margin-top: 4rem; font-size: 1.25rem; font-weight: 600; color: var(--foreground); }
+.how-grid {
+  margin-top: 1.5rem;
+  display: grid; gap: 1.5rem; align-items: stretch;
+}
+@media (min-width: 768px) { .how-grid { grid-template-columns: 1fr 1fr; } }
+.how-card {
+  min-width: 0; border-radius: calc(var(--radius) + 8px);
+  border: 1px solid var(--border); background-color: var(--card);
+  padding: 1.25rem;
+}
+@media (min-width: 640px) { .how-card { padding: 1.5rem; } }
+.how-card h3 { margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600; }
+.how-card-img {
+  height: 24rem; width: 100%; border-radius: calc(var(--radius) + 2px);
+  border: 1px solid var(--border); background-color: var(--chat-background);
+  object-fit: contain;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted-foreground); font-size: 0.8rem;
+}
+.how-card ol {
+  margin-top: 1.25rem; list-style: decimal; padding-left: 1.25rem;
+  text-align: left; font-size: 0.875rem; line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.how-card ol li + li { margin-top: 0.75rem; }
+.privacy-h2 { margin-top: 4rem; font-size: 1.25rem; font-weight: 600; color: var(--foreground); }
+.privacy-block {
+  margin-top: 1rem; border-top: 1px solid var(--border);
+  padding: 1.5rem 0; text-align: left;
+  font-size: 0.875rem; line-height: 1.6;
+}
+.privacy-block p { color: var(--foreground); margin-bottom: 0.75rem; }
+.privacy-block ul { list-style: disc; padding-left: 1.25rem; color: var(--muted-foreground); }
+.privacy-block ul li + li { margin-top: 0.25rem; }
+
+/* ─── CHAT SCREEN ────────────────────────────────────────────────────────── */
+#screen-chat {
+  height: 100dvh; flex-direction: column;
+  background-color: var(--chat-background); color: var(--chat-ink);
+}
+/* Header */
+.chat-header {
+  position: relative; display: flex; align-items: center;
+  justify-content: space-between;
+  width: 100%; max-width: 48rem; margin: 0 auto;
+  padding: 1rem 1rem;
+}
+@media (min-width: 640px) { .chat-header { padding: 1rem 2rem; } }
+.chat-header-centre { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.chat-title { font-size: 1.125rem; font-weight: 600; }
+
+/* Avatar */
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  overflow: hidden; border-radius: 9999px;
+  background-color: var(--chat-avatar); flex-shrink: 0;
+}
+.avatar-lg { width: 4rem; height: 4rem; font-size: 2.25rem; }
+.avatar-sm { width: 2.25rem; height: 2.25rem; font-size: 1.5rem; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Sub-header */
+.chat-subheader {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 0.25rem 0.75rem;
+  width: 100%; max-width: 48rem; margin: 0 auto;
+  padding: 0 1rem 0.75rem; font-size: 0.75rem; color: var(--muted-foreground);
+}
+.chat-status {
+  padding: 0 1rem; text-align: center;
+  font-size: 0.75rem; color: var(--muted-foreground);
+}
+.chat-error {
+  padding: 0.5rem 1rem; text-align: center;
+  font-size: 0.875rem; color: var(--destructive);
+}
+
+/* Settings bar */
+.chat-settings-bar {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  width: 100%; max-width: 48rem; margin: 0 auto;
+  padding: 0.75rem;
+}
+
+/* Messages */
+.chat-messages {
+  flex: 1; overflow-y: auto;
+  padding: 1.5rem 1rem;
+}
+@media (min-width: 640px) { .chat-messages { padding: 1.5rem 2rem; } }
+.chat-messages-inner { max-width: 42rem; margin: 0 auto; }
+.chat-empty {
+  margin-top: 3rem; text-align: center; color: var(--muted-foreground);
+}
+.chat-empty-emoji { font-size: 2.25rem; display: block; }
+.chat-empty p { margin-top: 0.75rem; }
+
+/* Message rows */
+.msg-row {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.msg-row-right { justify-content: flex-end; }
+.msg-row-left  { justify-content: flex-start; }
+.msg-bubble {
+  min-width: 0; max-width: 75%;
+  border-radius: 1.5rem; padding: 0.75rem 1rem;
+}
+.msg-bubble-user      { border-bottom-right-radius: 0.25rem; background-color: var(--chat-user);  color: var(--chat-ink); }
+.msg-bubble-reply     { border-bottom-left-radius:  0.25rem; background-color: var(--chat-reply); color: var(--chat-ink); }
+.msg-bubble-scheduled { border-bottom-left-radius:  0.25rem; background-color: var(--scheduled);  color: var(--scheduled-foreground); }
+.msg-bubble-guide     { border-bottom-left-radius:  0.25rem; background-color: var(--guide-bubble); color: var(--chat-ink); }
+.msg-bubble img { max-width: 100%; border-radius: calc(var(--radius) + 2px); background-color: var(--background); display: block; }
+.msg-bubble p { white-space: pre-wrap; word-break: break-words; }
+.msg-footer {
+  margin-top: 0.25rem; display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: flex-end;
+  gap: 0.5rem; font-size: 0.75rem; opacity: 0.7;
+}
+.msg-delete-btn {
+  background: none; border: none; cursor: pointer; color: inherit;
+  padding: 0; width: 1.75rem; height: 1.75rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 9999px; opacity: 1;
+}
+.msg-delete-btn:hover { background-color: var(--muted); }
+@media (min-width: 640px) {
+  .msg-row:not(:hover) .msg-delete-btn { opacity: 0; }
+  .msg-delete-btn:focus { opacity: 1; }
+}
+
+/* Input area */
+.chat-form { padding: 0.75rem 1rem 1.5rem; }
+@media (min-width: 640px) { .chat-form { padding: 0.75rem 2rem 1.5rem; } }
+.chat-form-inner { max-width: 42rem; margin: 0 auto; }
+.schedule-row {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: center; gap: 0.5rem; margin-bottom: 0.75rem;
+}
+.schedule-row label { font-size: 0.875rem; }
+.schedule-input {
+  min-width: 0; max-width: 100%;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  background-color: var(--background); padding: 0.5rem 0.75rem;
+  font-size: 0.875rem; color: var(--foreground);
+}
+.input-row { display: flex; align-items: center; gap: 0.5rem; }
+.msg-input {
+  height: 2.75rem; min-width: 0; flex: 1;
+  border-radius: 9999px; border: 2px solid var(--border);
+  background: transparent; padding: 0 1rem;
+  font-size: 1rem; color: var(--foreground); outline: none;
+}
+.msg-input:focus { box-shadow: 0 0 0 2px var(--ring); border-color: var(--ring); }
+.toolbar {
+  margin-top: 0.5rem; display: flex; align-items: flex-start;
+  justify-content: center; gap: 0.5rem; color: var(--chat-tool);
+}
+.toolbar-btn {
+  background: none; border: none; cursor: pointer; color: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 0.125rem;
+  border-radius: var(--radius); padding: 0.375rem 0.75rem;
+  transition: background 0.15s;
+}
+.toolbar-btn:hover { background-color: var(--muted); }
+.toolbar-btn svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+.toolbar-btn span { font-size: 0.75rem; line-height: 1; white-space: nowrap; }
+.toolbar-status { font-size: 0.75rem; color: var(--muted-foreground); align-self: center; }
+
+/* Guide toggle in header */
+.guide-toggle-wrap {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.7rem; color: var(--muted-foreground);
+}
+
+/* ─── DIALOG (modal overlay) ─────────────────────────────────────────────── */
+.dialog-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.dialog-overlay.hidden { display: none; }
+.dialog-box {
+  position: relative;
+  width: calc(100% - 2rem); max-width: 28rem;
+  max-height: 85dvh; overflow-y: auto;
+  background-color: var(--popover); color: var(--popover-foreground);
+  border-radius: var(--radius); padding: 1.25rem;
+  border: 1px solid var(--border);
+}
+.dialog-title {
+  font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;
+  padding-right: 2rem; color: var(--foreground);
+}
+.dialog-close {
+  position: absolute; top: 0.875rem; right: 0.875rem;
+  background: none; border: none; cursor: pointer;
+  color: var(--muted-foreground); padding: 0.25rem; border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+}
+.dialog-close:hover { background-color: var(--muted); color: var(--foreground); }
+.dialog-footer { margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem; }
+.dialog-footer-between { margin-top: 1rem; display: flex; justify-content: space-between; gap: 0.5rem; }
+
+/* ─── AUTO-REPLIES DIALOG ────────────────────────────────────────────────── */
+.rules-list { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.rule-item { border-radius: calc(var(--radius) + 4px); border: 1px solid var(--border); padding: 0.75rem; }
+.rule-item-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.rule-type-label { font-size: 0.75rem; color: var(--muted-foreground); display: block; }
+.rule-message { font-size: 0.875rem; color: var(--foreground); white-space: pre-wrap; word-break: break-words; }
+.rule-keywords { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.kw-pill { border-radius: 9999px; background-color: var(--muted); padding: 0.125rem 0.5rem; font-size: 0.75rem; color: var(--muted-foreground); }
+.rules-form { border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.toggle-group { display: flex; gap: 0.5rem; }
+.form-label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--foreground); }
+.form-input {
+  width: 100%; border-radius: var(--radius); border: 1px solid var(--border);
+  background-color: var(--background); padding: 0.5rem 0.75rem;
+  font-size: 0.875rem; color: var(--foreground); outline: none;
+}
+.form-input:focus { box-shadow: 0 0 0 2px var(--ring); }
+.form-textarea {
+  width: 100%; border-radius: var(--radius); border: 1px solid var(--border);
+  background-color: var(--background); padding: 0.5rem 0.75rem;
+  font-size: 0.875rem; color: var(--foreground); outline: none;
+  resize: none;
+}
+.form-textarea:focus { box-shadow: 0 0 0 2px var(--ring); }
+
+/* ─── DRAW DIALOG ────────────────────────────────────────────────────────── */
+#draw-canvas {
+  width: 100%; touch-action: none;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  display: block;
+}
+
+/* ─── SVG icons (inline lucide-style) ───────────────────────────────────── */
+.icon { width: 1.25rem; height: 1.25rem; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HOME SCREEN
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-home" class="screen active font-lexend">
+  <!-- Theme toggle — top right of home screen -->
+  <div style="display:flex;justify-content:flex-end;padding:1rem 1rem 0;max-width:56rem;margin:0 auto;">
+    <button id="theme-btn-home" class="btn btn-ghost btn-icon" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark / light mode" style="font-size:1.25rem;">🌙</button>
+  </div>
+  <div class="home-inner" style="padding-top:0.5rem;">
+    <h1 class="home-h1">Note to Self</h1>
+    <p class="home-subtitle">Be the person you want to talk to. Your notes stay on your device, never sent to us.</p>
+    <div class="home-cta">
+      <button class="btn btn-primary btn-lg btn-rounded-full" onclick="showScreen('chat')" aria-label="Open Note to Self">
+        Open Note to Self
+        <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+
+    <h2 class="home-h2">How it works</h2>
+    <div class="how-grid">
+      <article class="how-card">
+        <h3>Note to Self</h3>
+        <div class="how-card-img">Chat screenshot preview</div>
+        <ol>
+          <li>Type a message — or add your own auto-replies first (see Auto-Replies below) so a keyword sends yourself a word back.</li>
+          <li>Pick a time with the clock to schedule a message to your future self (green bubbles). With saving off, keep this tab open; with saving on, overdue notes arrive when you reopen it.</li>
+          <li>Tap Draw to sketch a message, and schedule it too if you like.</li>
+        </ol>
+      </article>
+      <article class="how-card">
+        <h3>Auto-Replies</h3>
+        <div class="how-card-img">Auto-Replies screenshot preview</div>
+        <ol>
+          <li>Open Note to Self and tap the speech-bubble icon in the bottom bar to open Auto-Replies.</li>
+          <li>Choose <strong>Text</strong> for keyword replies or <strong>Drawing</strong> for replies to a drawing type you select.</li>
+          <li>Enter keywords or drawing types, separated by commas, then write the message you want to receive.</li>
+          <li>Tap <strong>Add auto-reply</strong>, then <strong>Save</strong>. Send a matching text message, or choose that type when sending a drawing, to receive your reply.</li>
+        </ol>
+      </article>
+    </div>
+
+    <h2 class="privacy-h2">Your privacy</h2>
+    <div class="privacy-block">
+      <p><strong>Close the tab and it's gone — unless you choose to save.</strong> By default, your messages, drawings, scheduled notes and profile photo disappear when you close or reload the tab. Turn on "Save messages on this device" to keep them in this browser. Turning it off deletes the saved copy, while your current chat stays until you leave.</p>
+      <ul>
+        <li>Messages, drawings, profile photos and audio are never sent to any service. Optional saved notes stay only in this browser, not in an account or on our servers. Anyone using this browser can access saved notes; clearing browser data removes them.</li>
+        <li>Your auto-reply keywords and reply text are kept in this browser's storage on your device, independently of the message-saving toggle — nothing leaves it.</li>
+        <li>No accounts, no tracking, no analytics.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CHAT SCREEN
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-chat" class="screen flex" style="display:none;flex-direction:column;height:100dvh;background-color:var(--chat-background);color:var(--chat-ink);">
+
+  <!-- Header -->
+  <header class="chat-header">
+    <button class="btn btn-ghost btn-icon" onclick="showScreen('home')" aria-label="Home" title="Home" style="color:var(--chat-tool)">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </button>
+    <div class="chat-header-centre">
+      <span class="avatar avatar-lg" id="chat-avatar-lg" aria-label="Your profile">🙂</span>
+      <h1 class="chat-title">Note to Self</h1>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.35rem;">
+      <div style="display:flex;gap:0.25rem;">
+        <button id="theme-btn-chat" class="btn btn-ghost btn-icon" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark / light mode" style="color:var(--chat-tool);font-size:1.1rem;">🌙</button>
+        <button class="btn btn-ghost btn-icon" id="btn-settings" onclick="toggleSettings()" aria-label="Chat settings" title="Chat settings" style="color:var(--chat-tool)">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+      <label class="guide-toggle-wrap" title="Enable or disable the onboarding guide">
+        <span>Guide</span>
+        <span class="switch" style="width:1.75rem;height:1rem;">
+          <input type="checkbox" id="guide-toggle" onchange="onGuideToggle(this.checked)" />
+          <span class="switch-track"></span>
+          <span class="switch-thumb" style="width:0.65rem;height:0.65rem;top:1.5px;left:2px;"></span>
+        </span>
+      </label>
+    </div>
+  </header>
+
+  <!-- Sub-header -->
+  <div class="chat-subheader">
+    <label class="switch-wrap" for="save-toggle">
+      <span class="switch">
+        <input type="checkbox" id="save-toggle" onchange="onSaveToggle(this.checked)" />
+        <span class="switch-track"></span>
+        <span class="switch-thumb"></span>
+      </span>
+      Save messages on this device
+    </label>
+    <span id="scheduled-count" style="display:none"></span>
+  </div>
+  <p class="chat-status" id="chat-status-line">Close or reload this tab and your messages disappear.</p>
+  <p class="chat-error" id="chat-error" style="display:none"></p>
+
+  <!-- Settings bar -->
+  <div class="chat-settings-bar" id="settings-bar" style="display:none;max-width:48rem;margin:0 auto;width:100%;">
+    <button class="btn btn-ghost" onclick="clearChat()" style="font-size:0.875rem;gap:0.4rem;">
+      <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      Clear chat
+    </button>
+  </div>
+
+  <!-- Messages -->
+  <main class="chat-messages" id="chat-messages">
+    <div class="chat-messages-inner" id="messages-list">
+      <div class="chat-empty" id="chat-empty">
+        <span class="chat-empty-emoji" aria-hidden="true">🙂</span>
+        <p>A little space for you.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Input form -->
+  <form class="chat-form" id="chat-form" onsubmit="sendMessage(event)">
+    <div class="chat-form-inner">
+      <!-- Schedule row -->
+      <div class="schedule-row" id="schedule-row" style="display:none;">
+        <label for="schedule-input" style="font-size:0.875rem;">Schedule for</label>
+        <input type="datetime-local" id="schedule-input" class="schedule-input" title="Schedule (optional)" />
+        <button type="button" class="btn btn-ghost btn-icon" onclick="cancelSchedule()" aria-label="Cancel scheduling" title="Cancel scheduling">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Input row -->
+      <div class="input-row">
+        <input
+          type="text" id="msg-input" class="msg-input"
+          placeholder="Message yourself…"
+          aria-label="Message yourself"
+          autocomplete="off"
+        />
+        <button type="submit" id="btn-send" class="btn btn-icon btn-rounded-full" style="background-color:var(--chat-tool);color:var(--primary-foreground);" aria-label="Send message" title="Send message" disabled>
+          <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button type="button" class="toolbar-btn" onclick="openRules()" aria-label="Auto-Replies" title="Auto-Replies">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Auto-Replies</span>
+        </button>
+        <button type="button" class="toolbar-btn" onclick="openDraw()" aria-label="Draw a message" title="Draw a message">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Draw</span>
+        </button>
+        <button type="button" class="toolbar-btn" onclick="toggleSchedule()" aria-label="Schedule a message" title="Schedule a message">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Schedule</span>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     AUTO-REPLIES DIALOG
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="dialog-overlay hidden" id="rules-dialog" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+  <div class="dialog-box">
+    <h2 class="dialog-title" id="rules-title">Auto-replies</h2>
+    <button class="dialog-close" onclick="closeRules()" aria-label="Close Auto-replies">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="rules-list" id="rules-list"></div>
+    <div class="rules-form">
+      <div class="toggle-group" role="group" aria-label="Reply trigger type">
+        <button type="button" class="btn btn-primary" id="rule-type-text" onclick="setRuleType('text')" aria-pressed="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Text
+        </button>
+        <button type="button" class="btn btn-outline" id="rule-type-drawing" onclick="setRuleType('drawing')" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Drawing
+        </button>
+      </div>
+      <label class="form-label" id="rule-kw-label" for="rule-keywords">Keywords (comma-separated)</label>
+      <input type="text" id="rule-keywords" class="form-input" placeholder="sad, don't know what to do" aria-labelledby="rule-kw-label" />
+      <label class="form-label" for="rule-message">Message to send</label>
+      <textarea id="rule-message" class="form-textarea" rows="3" placeholder="ex: You got this. Keep going and always breathe."></textarea>
+      <button type="button" class="btn btn-primary btn-rounded-full" id="btn-add-rule" onclick="addRule()" style="font-size:0.875rem;" disabled>Add auto-reply</button>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="btn btn-outline" onclick="closeRules()">Cancel</button>
+      <button type="button" class="btn btn-primary btn-rounded-full" onclick="saveRules()" style="font-size:0.875rem;">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DRAW DIALOG
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="dialog-overlay hidden" id="draw-dialog" role="dialog" aria-modal="true" aria-labelledby="draw-title">
+  <div class="dialog-box">
+    <h2 class="dialog-title" id="draw-title">Draw a message</h2>
+    <button class="dialog-close" onclick="closeDraw()" aria-label="Close Draw dialog">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <canvas id="draw-canvas" width="400" height="300" aria-label="Drawing canvas"></canvas>
+    <label class="form-label" for="draw-category" style="margin-top:0.75rem;display:block;">Drawing type (optional)</label>
+    <select id="draw-category" class="form-input" style="margin-top:0.25rem;">
+      <option value="">No auto-reply</option>
+    </select>
+    <label class="form-label" for="draw-schedule" style="margin-top:0.75rem;display:block;">Schedule (optional)</label>
+    <input type="datetime-local" id="draw-schedule" class="form-input" style="margin-top:0.25rem;" />
+    <div class="dialog-footer-between">
+      <button type="button" class="btn btn-outline" onclick="clearCanvas()" style="gap:0.4rem;">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Clear
+      </button>
+      <div style="display:flex;gap:0.5rem;">
+        <button type="button" class="btn btn-outline" onclick="closeDraw()">Cancel</button>
+        <button type="button" class="btn btn-primary btn-rounded-full" id="btn-draw-send" onclick="sendDrawing()" style="font-size:0.875rem;">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ─────────────────────────────────────────────────────────────────────
+     All app logic lives in this single SCRIPT block so the file stays
+     completely self-contained — no external JS files needed.
+
+     Sections (in order):
+       1.  STATE          — variables that hold the app's working memory
+       2.  SCREEN ROUTING — switching between Home and Chat views
+       3.  DARK MODE      — auto-follows the OS light/dark preference
+       4.  UTILS          — tiny helper functions used all over the app
+       5.  MATCH-REPLY    — keyword matching engine for Auto-Replies
+       6.  RENDER         — turns the messages[] array into visible bubbles
+       7.  SEND           — handles typing, sending, and scheduling
+       8.  SCHEDULE UI    — shows/hides the datetime picker row
+       9.  SETTINGS       — clear chat, settings panel toggle
+      10.  SAVE TOGGLE    — lets the user keep messages after closing the tab
+      11.  PERSISTENCE    — reads/writes to the browser's localStorage
+      12.  GUIDE TOGGLE   — the on/off switch for the AI guide
+      13.  AI GUIDE AGENT — the first-visit onboarding conversation bot
+      14.  AUTO-REPLIES   — rules dialog (add, delete, save keyword rules)
+      15.  DRAWING        — the canvas drawing dialog
+      16.  KEYBOARD       — closes dialogs when Escape is pressed
+═══════════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict'; // Catches common JS mistakes early — always a good idea.
+
+/* ════════════════════════════════════════════════════════════════════════
+   1. STATE
+   ──────────────────────────────────────────────────────────────────────
+   These variables are the app's "working memory". They live in RAM while
+   the tab is open. When the tab closes they are gone — unless the user
+   turns on "Save messages on this device", which copies them into the
+   browser's localStorage (a tiny built-in database on disk).
+
+   messages[]
+     Every visible chat bubble. Each item is a plain JS object:
+       { id, text, image, at, auto, scheduled, guide }
+     - id        : a unique string so we can find/delete the right bubble
+     - text      : the message string (may be empty if it's a drawing)
+     - image     : a base-64 PNG data URL when the message is a drawing
+     - at        : timestamp in milliseconds (e.g. Date.now())
+     - auto      : true  → this is an Auto-Reply (green bubble, left side)
+     - scheduled : true  → this arrived from the scheduled queue
+     - guide     : true  → this was sent by the AI guide bot
+
+   scheduled[]
+     Messages that haven't appeared yet (set for a future time).
+     When their time arrives, deliverScheduled() moves them into messages[].
+
+   rules[]
+     Auto-Reply rules the user created. Each rule:
+       { id, keywords[], message, type }
+     - keywords : array of words/phrases that trigger this reply
+     - message  : what gets sent back automatically
+     - type     : "text" (keyword match) or "drawing" (category match)
+
+   guideTimers[]
+     IDs returned by setTimeout() for guide messages. Stored so we can
+     cancel them all if the user turns the guide off mid-conversation.
+════════════════════════════════════════════════════════════════════════ */
+let messages   = [];
+let scheduled  = [];
+let rules      = [];
+let saveEnabled = false;
+let guideEnabled = true;
+let guideDone    = false;
+let awaitingFeelingReply = false; // True while guide waits for the user's first reply
+let feelingWord  = '';            // First word the user typed (used to pre-fill Auto-Replies)
+let guideTimers  = [];
+
+/*
+   localStorage keys
+   localStorage is like a tiny key-value database built into every browser.
+   We use these string constants as the "key" names so we never typo them.
+*/
+const RULE_KEY       = 'self-rules';          // Stores saved Auto-Reply rules
+const SAVE_KEY       = 'self-save-messages';  // Stores whether saving is on/off
+const DATA_KEY       = 'self-messages';       // Stores the actual chat messages
+const GUIDE_DONE_KEY = 'self-guide-done';     // Stores whether the guide finished
+const GUIDE_ON_KEY   = 'self-guide-enabled';  // Stores whether the guide is enabled
+
+/* ════════════════════════════════════════════════════════════════════════
+   2. SCREEN ROUTING
+   ──────────────────────────────────────────────────────────────────────
+   The app has two "screens" — the Home page and the Chat page.
+   They are both in the HTML at the same time; we simply show one and
+   hide the other. No page reload, no URL change needed.
+
+   showScreen('home') → shows #screen-home, hides #screen-chat
+   showScreen('chat') → shows #screen-chat, hides #screen-home
+════════════════════════════════════════════════════════════════════════ */
+function showScreen(id) {
+  // Hide all screens first
+  document.getElementById('screen-home').classList.remove('active');
+  document.getElementById('screen-home').style.display = 'none';
+  document.getElementById('screen-chat').classList.remove('active');
+  document.getElementById('screen-chat').style.display = 'none';
+
+  // Show the requested screen
+  const el = document.getElementById('screen-' + id);
+  el.classList.add('active');
+  // Chat uses flexbox layout; home uses block
+  el.style.display = id === 'chat' ? 'flex' : 'block';
+
+  // Update the browser tab title
+  if (id === 'chat') {
+    document.title = 'Chat — Note to Self';
+    scrollToBottom(); // Scroll to the latest message when entering chat
+  } else {
+    document.title = 'Note to Self — Check in on yourself';
+  }
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+const THEME_KEY = 'self-theme'; // 'dark' | 'light' | null (follow OS)
+
+(function applyDark() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved === 'dark')  { document.documentElement.classList.add('dark'); }
+  else if (saved === 'light') { document.documentElement.classList.remove('dark'); }
+  else {
+    // No manual preference — follow OS
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!localStorage.getItem(THEME_KEY)) {
+        document.documentElement.classList.toggle('dark', e.matches);
+        updateThemeButtons();
+      }
+    });
+  }
+  updateThemeButtons();
+})();
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+  updateThemeButtons();
+}
+
+function updateThemeButtons() {
+  const isDark = document.documentElement.classList.contains('dark');
+  const icon = isDark ? '☀️' : '🌙';
+  const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  ['theme-btn-home','theme-btn-chat'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) { btn.textContent = icon; btn.setAttribute('aria-label', label); btn.title = label; }
+  });
+}
+
+/* ── Utils ────────────────────────────────────────────────────────────────── */
+function uid() { return crypto.randomUUID(); }
+function now()  { return Date.now(); }
+function fmt(ts) {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── matchReply (ported from auto-replies.ts) ─────────────────────────────── */
+function matchReply(rulesArr, value, type) {
+  const lower = value.trim().toLowerCase();
+  if (!lower) return undefined;
+  return rulesArr.find(rule => {
+    const rtype = rule.type || 'text';
+    return rtype === type && rule.keywords.some(kw => {
+      const k = kw.trim().toLowerCase();
+      return k && (type === 'drawing' ? lower === k : lower.includes(k));
+    });
+  });
+}
+
+/* ── Render messages ──────────────────────────────────────────────────────── */
+function renderMessages() {
+  const list = document.getElementById('messages-list');
+  const empty = document.getElementById('chat-empty');
+  empty.style.display = messages.length === 0 ? '' : 'none';
+
+  // Remove old bubbles (keep empty state div)
+  Array.from(list.querySelectorAll('.msg-row')).forEach(el => el.remove());
+
+  messages.forEach(m => {
+    const isLeft = m.auto || m.scheduled || m.guide;
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + (isLeft ? 'msg-row-left' : 'msg-row-right');
+    row.dataset.id = m.id;
+
+    // Avatar (left side)
+    if (isLeft) {
+      const av = document.createElement('span');
+      if (m.guide) {
+        av.className = 'avatar avatar-sm';
+        av.style.background = 'var(--guide-avatar)';
+        av.setAttribute('aria-label', 'Your guide');
+        av.textContent = '✨';
+      } else {
+        av.className = 'avatar avatar-sm';
+        av.setAttribute('aria-label', 'Your profile');
+        av.textContent = '🙂';
+      }
+      row.appendChild(av);
+    }
+
+    // Bubble
+    const bubble = document.createElement('div');
+    let bubbleClass = 'msg-bubble ';
+    if (m.guide)      bubbleClass += 'msg-bubble-guide';
+    else if (m.scheduled) bubbleClass += 'msg-bubble-scheduled';
+    else if (m.auto)  bubbleClass += 'msg-bubble-reply';
+    else              bubbleClass += 'msg-bubble-user';
+    bubble.className = bubbleClass;
+
+    if (m.image) {
+      const img = document.createElement('img');
+      img.src = m.image; img.alt = 'Drawing';
+      img.style.maxWidth = '100%';
+      img.style.borderRadius = 'calc(var(--radius) + 2px)';
+      img.style.background = 'var(--background)';
+      bubble.appendChild(img);
+    }
+    if (m.text) {
+      const p = document.createElement('p');
+      p.textContent = m.text;
+      bubble.appendChild(p);
+    }
+
+    // Footer
+    const footer = document.createElement('div');
+    footer.className = 'msg-footer';
+    if (m.guide)     footer.innerHTML += '<span>your guide</span>';
+    if (m.auto)      footer.innerHTML += '<span>auto-reply from you</span>';
+    if (m.scheduled) footer.innerHTML += '<span>scheduled from you</span>';
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'msg-delete-btn';
+    delBtn.title = 'Delete message';
+    delBtn.setAttribute('aria-label', 'Delete message');
+    delBtn.innerHTML = '<svg class="icon" style="width:1rem;height:1rem;" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+    delBtn.onclick = () => deleteMessage(m.id);
+    footer.appendChild(delBtn);
+
+    const time = document.createElement('span');
+    time.textContent = fmt(m.at);
+    footer.appendChild(time);
+
+    bubble.appendChild(footer);
+    row.appendChild(bubble);
+
+    // Avatar (right side for user)
+    if (!isLeft) {
+      const av = document.createElement('span');
+      av.className = 'avatar avatar-sm';
+      av.setAttribute('aria-label', 'Your profile');
+      av.textContent = '🙂';
+      row.appendChild(av);
+    }
+
+    list.appendChild(row);
+  });
+
+  // Scheduled count
+  const sc = document.getElementById('scheduled-count');
+  if (scheduled.length > 0) {
+    sc.textContent = scheduled.length + ' scheduled';
+    sc.style.display = '';
+  } else {
+    sc.style.display = 'none';
+  }
+
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  const el = document.getElementById('chat-messages');
+  el.scrollTop = el.scrollHeight;
+}
+
+function deleteMessage(id) {
+  messages = messages.filter(m => m.id !== id);
+  renderMessages();
+  persistChat();
+}
+
+/* ── Send message ─────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('msg-input');
+  const btn = document.getElementById('btn-send');
+  inp.addEventListener('input', () => {
+    btn.disabled = !inp.value.trim();
+  });
+
+  // Rules live validation
+  const rkw = document.getElementById('rule-keywords');
+  const rmsg = document.getElementById('rule-message');
+  const addBtn = document.getElementById('btn-add-rule');
+  function updateAddBtn() {
+    addBtn.disabled = !rkw.value.trim() || !rmsg.value.trim();
+  }
+  rkw.addEventListener('input', updateAddBtn);
+  rmsg.addEventListener('input', updateAddBtn);
+
+  // Draw schedule label
+  document.getElementById('draw-schedule').addEventListener('change', () => {
+    document.getElementById('btn-draw-send').textContent =
+      document.getElementById('draw-schedule').value ? 'Schedule' : 'Send';
+  });
+
+  // Init
+  loadAll();
+});
+
+function sendMessage(e) {
+  e.preventDefault();
+  const inp = document.getElementById('msg-input');
+  const trimmed = inp.value.trim();
+  if (!trimmed) return;
+
+  const whenVal = document.getElementById('schedule-input').value;
+
+  // Guide is awaiting feeling reply
+  if (awaitingFeelingReply) {
+    awaitingFeelingReply = false;
+    feelingWord = trimmed.split(/\s+/)[0].replace(/[^a-zA-Z]/g, '').toLowerCase();
+    pushMsg({ text: trimmed });
+    inp.value = '';
+    document.getElementById('btn-send').disabled = true;
+    runGuideResponse(trimmed.toLowerCase());
+    return;
+  }
+
+  if (whenVal) {
+    const delay = new Date(whenVal).getTime() - now();
+    if (delay <= 0) { alert('Pick a time in the future.'); return; }
+    scheduleMsg({ text: trimmed }, whenVal);
+    inp.value = '';
+    document.getElementById('schedule-input').value = '';
+    document.getElementById('schedule-row').style.display = 'none';
+    document.getElementById('btn-send').disabled = true;
+    renderMessages();
+    persistChat();
+    return;
+  }
+
+  pushMsg({ text: trimmed });
+  inp.value = '';
+  document.getElementById('btn-send').disabled = true;
+
+  // Agentic RAG guide — fires if guide is on and onboarding is complete
+  if (guideEnabled) {
+    const agentReply = askAgent(trimmed);
+    if (agentReply) {
+      const t = setTimeout(() => {
+        pushGuide(agentReply.text);
+        if (agentReply.action) agentReply.action();
+        renderMessages();
+        persistChat();
+      }, 800);
+      guideTimers.push(t);
+    }
+  }
+
+  // Auto-reply (fires independently of guide)
+  const rule = matchReply(rules, trimmed, 'text');
+  if (rule) {
+    setTimeout(() => {
+      pushMsg({ text: rule.message, auto: true });
+      renderMessages();
+      persistChat();
+    }, 700);
+  }
+
+  renderMessages();
+  persistChat();
+}
+
+function pushMsg(m) {
+  messages.push({ id: uid(), at: now(), text: '', ...m });
+}
+
+function scheduleMsg(m, atStr) {
+  const atMs = new Date(atStr).getTime();
+  const entry = { id: uid(), at: atMs, text: '', scheduled: true, ...m };
+  scheduled.push(entry);
+  const delay = atMs - now();
+  setTimeout(() => deliverScheduled(entry.id), delay);
+}
+
+function deliverScheduled(id) {
+  const idx = scheduled.findIndex(s => s.id === id);
+  if (idx === -1) return;
+  const m = scheduled.splice(idx, 1)[0];
+  messages.push(m);
+  renderMessages();
+  persistChat();
+}
+
+/* ── Schedule UI ──────────────────────────────────────────────────────────── */
+function toggleSchedule() {
+  const row = document.getElementById('schedule-row');
+  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+}
+function cancelSchedule() {
+  document.getElementById('schedule-input').value = '';
+  document.getElementById('schedule-row').style.display = 'none';
+}
+
+/* ── Settings ─────────────────────────────────────────────────────────────── */
+function toggleSettings() {
+  const bar = document.getElementById('settings-bar');
+  bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+}
+function clearChat() {
+  if (!confirm('Clear all messages and scheduled notes?')) return;
+  messages = [];
+  scheduled = [];
+  guideTimers.forEach(clearTimeout);
+  guideTimers = [];
+  awaitingFeelingReply = false;
+  renderMessages();
+  persistChat();
+}
+
+/* ── Save toggle ──────────────────────────────────────────────────────────── */
+function onSaveToggle(enabled) {
+  saveEnabled = enabled;
+  updateStatusLine();
+  persistChat();
+}
+function updateStatusLine() {
+  document.getElementById('chat-status-line').textContent = saveEnabled
+    ? 'Saved only in this browser. Overdue notes arrive when you reopen it.'
+    : 'Close or reload this tab and your messages disappear.';
+}
+
+/* ── Persistence (ported from chat-storage.ts) ────────────────────────────── */
+function persistChat() {
+  try {
+    if (saveEnabled) {
+      localStorage.setItem(SAVE_KEY, 'true');
+      localStorage.setItem(DATA_KEY, JSON.stringify({ messages, scheduled }));
+    } else {
+      localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(DATA_KEY);
+    }
+  } catch(err) {
+    showError('Could not save on this device. Browser storage may be full or blocked.');
+  }
+}
+function loadAll() {
+  // Rules
+  try {
+    const raw = localStorage.getItem(RULE_KEY);
+    if (raw) rules = JSON.parse(raw).filter(r => r.id !== 'seed-sad' && r.id !== 'seed-happy');
+  } catch(_) {}
+
+  // Messages
+  try {
+    if (localStorage.getItem(SAVE_KEY) === 'true') {
+      saveEnabled = true;
+      document.getElementById('save-toggle').checked = true;
+      const raw = localStorage.getItem(DATA_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const valid = m => m && typeof m.id === 'string' && typeof m.text === 'string' && Number.isFinite(m.at);
+        messages  = (parsed.messages  || []).filter(valid);
+        scheduled = (parsed.scheduled || []).filter(valid);
+        // Re-arm timers for already-scheduled items
+        const n = now();
+        scheduled.forEach(m => {
+          const delay = m.at - n;
+          if (delay > 0) setTimeout(() => deliverScheduled(m.id), delay);
+          else deliverScheduled(m.id);
+        });
+      }
+    }
+  } catch(_) {
+    showError('Browser saving is unavailable. This chat will disappear when you leave.');
+  }
+
+  // Guide state
+  guideDone    = localStorage.getItem(GUIDE_DONE_KEY) === 'true';
+  guideEnabled = localStorage.getItem(GUIDE_ON_KEY) !== 'false';
+  document.getElementById('guide-toggle').checked = guideEnabled;
+
+  updateStatusLine();
+  renderMessages();
+
+  // Start guide on first visit
+  if (guideEnabled && !guideDone) {
+    setTimeout(startGuide, 800);
+  }
+}
+function showError(msg) {
+  const el = document.getElementById('chat-error');
+  el.textContent = msg;
+  el.style.display = msg ? '' : 'none';
+}
+
+/* ── Guide toggle ─────────────────────────────────────────────────────────── */
+function onGuideToggle(enabled) {
+  guideEnabled = enabled;
+  localStorage.setItem(GUIDE_ON_KEY, enabled ? 'true' : 'false');
+  if (!enabled) {
+    // Cancel in-progress guide
+    guideTimers.forEach(clearTimeout);
+    guideTimers = [];
+    awaitingFeelingReply = false;
+    localStorage.setItem(GUIDE_DONE_KEY, 'true');
+    guideDone = true;
+  } else {
+    // Re-enable: clear done flag, note restarts next visit
+    localStorage.removeItem(GUIDE_DONE_KEY);
+    guideDone = false;
+    pushMsg({ text: 'Guide will restart on your next visit.', guide: true });
+    renderMessages();
+  }
+}
+
+/* ── AI Onboarding Guide Agent ────────────────────────────────────────────── */
+function startGuide() {
+  if (!guideEnabled || guideDone) return;
+  pushGuide('Hi! How are you feeling today? 🙂', () => {
+    awaitingFeelingReply = true;
+  });
+}
+
+function pushGuide(text, cb) {
+  pushMsg({ text, guide: true });
+  renderMessages();
+  if (cb) cb();
+}
+
+function runGuideResponse(input) {
+  const sadWords    = ['sad','down','depressed','anxious','anxious','worried','stressed','tired','exhausted','lost','alone','bad','terrible','awful','hurt'];
+  const happyWords  = ['happy','great','good','wonderful','excited','amazing','fantastic','joyful','awesome','blessed','grateful','well'];
+  const anxiousWords= ['anxious','nervous','scared','worried','overwhelmed','panic','stress','stressed'];
+
+  let tone = 'other';
+  if (anxiousWords.some(w => input.includes(w))) tone = 'anxious';
+  else if (sadWords.some(w => input.includes(w)))    tone = 'sad';
+  else if (happyWords.some(w => input.includes(w)))  tone = 'happy';
+
+  const responses = {
+    sad:     "I hear you. It's okay to feel that way. 💙 Let me show you how to set up a kind auto-reply for moments like this.",
+    anxious: "That sounds tough. Take a breath — you've got this. Let me show you how to send yourself a calming note automatically.",
+    happy:   "That's wonderful! 🌟 Let me show you how to set up a little reminder to keep that feeling going.",
+    other:   "Thanks for sharing. Let me show you how to set up an Auto-Reply for moments like this.",
+  };
+
+  const steps = [
+    responses[tone],
+    'Step 1 — Tap "Auto-Replies" in the toolbar below ↓',
+    'Step 2 — Type a keyword like "' + (feelingWord || 'sad') + '" and a kind message to yourself.',
+    'Step 3 — Tap "Add auto-reply" then "Save".',
+    "You're all set! Try sending that word now and watch what happens 🙂",
+  ];
+
+  let delay = 1200;
+  steps.forEach((text, i) => {
+    const t = setTimeout(() => {
+      pushGuide(text);
+      if (i === steps.length - 1) {
+        localStorage.setItem(GUIDE_DONE_KEY, 'true');
+        guideDone = true;
+      }
+    }, delay);
+    guideTimers.push(t);
+    delay += 1400;
+  });
+}
+
+/* ── Auto-Replies ─────────────────────────────────────────────────────────── */
+let editingRules = [];
+let currentRuleType = 'text';
+
+function openRules(prefillKeyword) {
+  editingRules = rules.map(r => ({ ...r, keywords: [...r.keywords] }));
+  currentRuleType = 'text';
+  renderRulesList();
+  renderRuleTypeButtons();
+  updateRuleLabels();
+  // Pre-fill keyword: from agent call, guide feeling word, or empty
+  const kw = prefillKeyword || (feelingWord && !guideDone ? feelingWord : '');
+  if (kw) document.getElementById('rule-keywords').value = kw;
+  document.getElementById('rules-dialog').classList.remove('hidden');
+}
+function closeRules() {
+  document.getElementById('rules-dialog').classList.add('hidden');
+  document.getElementById('rule-keywords').value = '';
+  document.getElementById('rule-message').value  = '';
+  document.getElementById('btn-add-rule').disabled = true;
+}
+function saveRules() {
+  rules = editingRules;
+  localStorage.setItem(RULE_KEY, JSON.stringify(rules));
+  closeRules();
+}
+function setRuleType(type) {
+  currentRuleType = type;
+  renderRuleTypeButtons();
+  updateRuleLabels();
+}
+function renderRuleTypeButtons() {
+  document.getElementById('rule-type-text').className    = 'btn btn-rounded-full ' + (currentRuleType === 'text'    ? 'btn-primary' : 'btn-outline');
+  document.getElementById('rule-type-drawing').className = 'btn btn-rounded-full ' + (currentRuleType === 'drawing' ? 'btn-primary' : 'btn-outline');
+  document.getElementById('rule-type-text').setAttribute('aria-pressed',    currentRuleType === 'text');
+  document.getElementById('rule-type-drawing').setAttribute('aria-pressed', currentRuleType === 'drawing');
+}
+function updateRuleLabels() {
+  document.getElementById('rule-kw-label').textContent = currentRuleType === 'drawing'
+    ? 'Drawing category (comma-separated)'
+    : 'Keywords (comma-separated)';
+  document.getElementById('rule-keywords').placeholder = currentRuleType === 'drawing'
+    ? 'heart, sad face, sunshine'
+    : "sad, don't know what to do";
+}
+function addRule() {
+  const kws = document.getElementById('rule-keywords').value.split(',').map(k => k.trim()).filter(Boolean);
+  const msg = document.getElementById('rule-message').value.trim();
+  if (!kws.length || !msg) return;
+  editingRules.push({ id: uid(), keywords: kws, message: msg, type: currentRuleType });
+  document.getElementById('rule-keywords').value = '';
+  document.getElementById('rule-message').value  = '';
+  document.getElementById('btn-add-rule').disabled = true;
+  renderRulesList();
+}
+function deleteRule(id) {
+  editingRules = editingRules.filter(r => r.id !== id);
+  renderRulesList();
+}
+function renderRulesList() {
+  const el = document.getElementById('rules-list');
+  if (editingRules.length === 0) {
+    el.innerHTML = '<p style="font-size:0.875rem;color:var(--muted-foreground);font-style:italic;">No auto-replies yet.</p>';
+    return;
+  }
+  el.innerHTML = editingRules.map(r => `
+    <div class="rule-item" data-id="${esc(r.id)}">
+      <div class="rule-item-header">
+        <div style="min-width:0;">
+          <span class="rule-type-label">${r.type === 'drawing' ? 'Drawing' : 'Text'}</span>
+          <p class="rule-message">${esc(r.message)}</p>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="deleteRule('${esc(r.id)}')"
+          title="Delete auto-reply" aria-label="Delete auto-reply"
+          style="color:var(--muted-foreground);width:2.25rem;height:2.25rem;flex-shrink:0;">
+          <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+      <div class="rule-keywords">
+        ${r.keywords.map(k => `<span class="kw-pill">${esc(k)}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── Drawing ──────────────────────────────────────────────────────────────── */
+let isDrawing = false;
+
+function openDraw() {
+  // Populate categories from drawing rules
+  const cats = [...new Set(rules.filter(r => r.type === 'drawing').flatMap(r => r.keywords))];
+  const sel = document.getElementById('draw-category');
+  sel.innerHTML = '<option value="">No auto-reply</option>' + cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  document.getElementById('draw-schedule').value = '';
+  document.getElementById('btn-draw-send').textContent = 'Send';
+  document.getElementById('draw-dialog').classList.remove('hidden');
+  clearCanvas();
+}
+function closeDraw() {
+  document.getElementById('draw-dialog').classList.add('hidden');
+}
+
+function clearCanvas() {
+  const canvas = document.getElementById('draw-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 400, 300);
+}
+
+function getPos(e, canvas) {
+  const r = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return [(clientX - r.left) * (400 / r.width), (clientY - r.top) * (300 / r.height)];
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('draw-canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.addEventListener('pointerdown', e => {
+    isDrawing = true;
+    const [x, y] = getPos(e, canvas);
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x, y);
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!isDrawing) return;
+    const [x, y] = getPos(e, canvas);
+    ctx.lineTo(x, y); ctx.stroke();
+  });
+  canvas.addEventListener('pointerup',    () => { isDrawing = false; });
+  canvas.addEventListener('pointerleave', () => { isDrawing = false; });
+});
+
+function sendDrawing() {
+  const canvas   = document.getElementById('draw-canvas');
+  const atStr    = document.getElementById('draw-schedule').value;
+  const category = document.getElementById('draw-category').value;
+  const image    = canvas.toDataURL('image/png');
+
+  if (atStr) {
+    const delay = new Date(atStr).getTime() - now();
+    if (delay <= 0) { alert('Pick a time in the future.'); return; }
+    scheduleMsg({ text: '', image }, atStr);
+    const rule = matchReply(rules, category, 'drawing');
+    if (rule) scheduleMsg({ text: rule.message, auto: true }, atStr);
+  } else {
+    pushMsg({ text: '', image });
+    const rule = matchReply(rules, category, 'drawing');
+    if (rule) {
+      setTimeout(() => {
+        pushMsg({ text: rule.message, auto: true });
+        renderMessages();
+        persistChat();
+      }, 700);
+    }
+  }
+
+  renderMessages();
+  persistChat();
+  closeDraw();
+}
+
+/* ── Dialog keyboard close ────────────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!document.getElementById('rules-dialog').classList.contains('hidden')) closeRules();
+  if (!document.getElementById('draw-dialog').classList.contains('hidden'))  closeDraw();
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   AGENTIC RAG ENGINE
+   Three layers: Knowledge Base → Retriever → Agent
+   Fully local — no API, no model download, works in all browsers.
+════════════════════════════════════════════════════════════════════════════ */
+
+// Rolling 3-turn conversation context for follow-up resolution
+let agentContext = []; // [{ role: 'user'|'guide', text }]
+
+// ── Knowledge Base ──────────────────────────────────────────────────────────
+// Each entry: { id, category, keywords[], chunks[] }
+// chunks[] = array of response strings (rotated for variety)
+const knowledgeBase = [
+  {
+    id: 'schedule',
+    category: 'schedule',
+    keywords: ['schedule','remind','reminder','future','later','time','clock','when','delay','send later','set a time','tomorrow','tonight'],
+    chunks: [
+      "You can schedule a message to your future self! Tap the 🕐 Schedule button in the toolbar, pick a date and time, type your message, then hit Send. It'll arrive right on time. 🕐",
+      "To schedule a note, tap the Clock icon in the toolbar below. A date-and-time picker will appear — set it, write your message, and press Send. Your future self will thank you. 💌",
+      "Great idea! Use the Schedule button (clock icon) to send yourself a message at any future time. It'll appear as a green bubble when it arrives."
+    ]
+  },
+  {
+    id: 'auto-reply',
+    category: 'auto-reply',
+    keywords: ['auto','reply','keyword','trigger','word','automatic','auto-reply','auto reply','responds','responds when','key word'],
+    chunks: [
+      "Auto-Replies let you set keywords that send yourself a message automatically. Tap the 💬 Auto-Replies button, add a keyword like 'sad', write a kind response, then save. Next time you type that word — your note appears! ✨",
+      "You can create Auto-Replies: tap the speech-bubble icon in the toolbar, type a keyword (e.g. 'tired'), write the message you want to receive, and save. Send that keyword anytime to get your own kind note back.",
+      "Auto-Replies are like little notes you set up in advance. When you type a matching keyword, your message fires automatically — great for affirmations or reminders. Tap Auto-Replies in the toolbar to set one up!"
+    ]
+  },
+  {
+    id: 'draw',
+    category: 'draw',
+    keywords: ['draw','sketch','doodle','picture','canvas','paint','drawing','art','scribble','image','illustrate'],
+    chunks: [
+      "You can send yourself a drawing! Tap the ✏️ Draw button in the toolbar. A canvas will open — draw freely, optionally pick a category for an auto-reply, and hit Send. Your sketch appears as a message bubble. 🎨",
+      "Feeling like expressing something visually? Tap Draw in the toolbar to open a blank canvas. Sketch anything, optionally schedule it, then send. You can even set up a drawing-type Auto-Reply to go with it!",
+      "The Draw feature lets you send freehand sketches to yourself. Open it from the toolbar, draw on the canvas, and send — or schedule it for later. Great for quick mood doodles! ✏️"
+    ]
+  },
+  {
+    id: 'app-help',
+    category: 'app-help',
+    keywords: ['what is','what can','how does','how do','help','guide','what does','features','what are','tell me','explain','overview','show me','what\'s'],
+    chunks: [
+      "Note to Self is your private space to message, encourage, and check in on yourself. You can send text notes, schedule future messages, draw sketches, and set up Auto-Replies that respond to keywords. Everything stays on your device — nothing is ever sent anywhere. 🙂",
+      "Here's what you can do: send yourself messages, schedule notes to arrive later, draw and send sketches, and create Auto-Replies that fire when you type certain words. It's all private and local to your browser.",
+      "Think of Note to Self as a kind, private chat with yourself. Use it to journal, set reminders, practice affirmations, or just vent. The guide (that's me!) is here to help you get the most out of it. ✨"
+    ]
+  },
+  {
+    id: 'privacy',
+    category: 'privacy',
+    keywords: ['private','privacy','data','saved','server','track','secure','safe','account','store','storage','browser','who can','sent to','cloud'],
+    chunks: [
+      "Your privacy is built in. Messages, drawings, and notes never leave your device — nothing is sent to any server. If you turn on 'Save messages', they're stored only in this browser. No accounts, no tracking, no analytics. 🔒",
+      "Everything stays on your device. The 'Save messages' toggle stores your chat in this browser only — it's not in an account or on any server. Clearing your browser data removes it. Completely private.",
+      "Note to Self has no accounts, no cloud storage, and no analytics. Your messages live only in your browser's memory (or localStorage if you enable saving). Turn off saving and they disappear when you close the tab."
+    ]
+  },
+  {
+    id: 'saving',
+    category: 'app-help',
+    keywords: ['save','saving','keep','persist','disappear','close tab','reopen','lose','lost','gone'],
+    chunks: [
+      "By default, messages disappear when you close the tab — it's a fresh start each time. To keep them, toggle on 'Save messages on this device' at the top of the chat. Your notes will be there next time you open it. 💾",
+      "Toggle 'Save messages on this device' (at the top of the chat) to keep your notes between sessions. Turn it off and the saved copy is deleted — your current chat stays until you leave the tab.",
+    ]
+  },
+  {
+    id: 'emotional-sad',
+    category: 'emotional-sad',
+    keywords: ['sad','unhappy','down','depressed','cry','crying','hurt','heartbroken','lonely','alone','miss','miserable','hopeless','worthless','grief','grieving','loss','lost','empty','numb'],
+    chunks: [
+      "I hear you. It's completely okay to feel sad — those feelings are valid. 💙 Be gentle with yourself today. Would you like to set up an Auto-Reply so that when you type 'sad', you get a kind message back from yourself?",
+      "Sending you a virtual hug. 🤗 It's okay not to be okay. One small thing that might help: write yourself a kind note right now, even just 'I'm doing my best.' You can schedule it to arrive tomorrow morning too.",
+      "That sounds really hard, and I'm glad you're here. 💙 Sometimes just getting it out helps. You might also try setting an Auto-Reply for when you feel this way — tap Auto-Replies in the toolbar and I'll help you set one up."
+    ]
+  },
+  {
+    id: 'emotional-anxious',
+    category: 'emotional-anxious',
+    keywords: ['anxious','anxiety','nervous','worried','worry','scared','fear','panic','overwhelmed','stress','stressed','tense','dread','uneasy','on edge','restless'],
+    chunks: [
+      "Take a slow breath — in for 4 counts, hold for 4, out for 4. 🌬️ You've got this. When anxiety spikes, even a short note to yourself can help ground you. Want to set up an Auto-Reply for moments like this?",
+      "Anxiety can feel so heavy. You're not alone in this. 💛 One thing that helps: schedule yourself a calming note for 10 minutes from now — a reminder that this feeling passes. Tap Schedule in the toolbar.",
+      "I hear you. When everything feels overwhelming, try writing out one thing you can control right now. Even something tiny counts. 💛 And I'm always here if you want to talk."
+    ]
+  },
+  {
+    id: 'emotional-tired',
+    category: 'emotional-tired',
+    keywords: ['tired','exhausted','burnt out','burnout','drained','fatigue','fatigued','worn out','no energy','sleepy','sleep','rest','can\'t keep up','too much'],
+    chunks: [
+      "Rest is productive too. 🌙 It sounds like you need a moment to breathe. You don't have to do everything today. Want to schedule yourself a gentle reminder to rest later?",
+      "Burnout is real and it's hard. Be kind to yourself — you're doing more than you realise. 💚 Try sending yourself one small encouragement right now. Even 'I'm allowed to rest' counts.",
+      "Your body and mind are telling you something important. Listen to them. 🌿 A quick tip: use the Schedule button to send yourself a 'rest now' reminder for an hour from now. Small acts of self-care add up."
+    ]
+  },
+  {
+    id: 'positive',
+    category: 'positive',
+    keywords: ['happy','great','good','wonderful','excited','amazing','fantastic','joyful','awesome','blessed','grateful','grateful','thrilled','proud','love','loving','celebrate','accomplished'],
+    chunks: [
+      "That's wonderful to hear! 🌟 Hold onto that feeling. You could even lock it in — send yourself a message right now describing what made you feel this way, so future-you can read it on a hard day.",
+      "Love that energy! ✨ Why not schedule a message to your future self capturing this moment? Tap the Clock icon and write something like 'Remember how good today felt.' 💛",
+      "You deserve this! 🎉 Celebrate it — send yourself a note about what you're proud of today. Future-you will love reading it."
+    ]
+  },
+  {
+    id: 'unknown',
+    category: 'unknown',
+    keywords: [],
+    chunks: [
+      "I'm not sure about that, but I'm here. 🙂 Try sending yourself a kind note — even a simple 'I've got this' can make a difference.",
+      "Hmm, I'm still learning! But I'm here to listen. You can always send yourself a message, set a reminder, or draw something to express how you're feeling. 🌿",
+      "I didn't quite catch that, but that's okay. 🙂 Is there something specific about the app I can help with — like scheduling, Auto-Replies, or drawing?"
+    ]
+  }
+];
+
+// ── Retriever ───────────────────────────────────────────────────────────────
+// Scores each knowledge base entry by keyword overlap with the query.
+// Returns the best-matching entry, or the 'unknown' fallback.
+function retrieve(query) {
+  // Combine current query with last 2 context turns for follow-up resolution
+  const contextText = agentContext.slice(-2).map(c => c.text).join(' ');
+  const combined = (query + ' ' + contextText).toLowerCase();
+
+  let best = null;
+  let bestScore = 0;
+
+  knowledgeBase.forEach(entry => {
+    if (entry.id === 'unknown') return; // fallback — only used if nothing else matches
+    const score = entry.keywords.reduce((acc, kw) => {
+      return acc + (combined.includes(kw.toLowerCase()) ? 1 : 0);
+    }, 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = entry;
+    }
+  });
+
+  return bestScore > 0 ? best : knowledgeBase.find(e => e.id === 'unknown');
+}
+
+// ── Chunk rotator ───────────────────────────────────────────────────────────
+// Cycles through chunks[] so the guide doesn't repeat itself.
+const chunkCursors = {};
+function nextChunk(entry) {
+  if (!chunkCursors[entry.id]) chunkCursors[entry.id] = 0;
+  const chunk = entry.chunks[chunkCursors[entry.id] % entry.chunks.length];
+  chunkCursors[entry.id]++;
+  return chunk;
+}
+
+// ── Agent ───────────────────────────────────────────────────────────────────
+// Orchestrates retrieve → pick response → decide UI action.
+// Returns { text, action } or null if the guide should stay silent.
+function askAgent(input) {
+  // Don't fire during onboarding or if guide is off
+  if (!guideEnabled || awaitingFeelingReply) return null;
+
+  const entry = retrieve(input);
+  const text  = nextChunk(entry);
+
+  // Update rolling context
+  agentContext.push({ role: 'user', text: input });
+  agentContext.push({ role: 'guide', text });
+  if (agentContext.length > 6) agentContext = agentContext.slice(-6); // keep last 3 turns
+
+  // Decide UI action based on category
+  let action = null;
+  if (entry.category === 'schedule') {
+    action = () => {
+      const row = document.getElementById('schedule-row');
+      if (row.style.display === 'none') toggleSchedule();
+    };
+  } else if (entry.category === 'auto-reply') {
+    const kw = feelingWord || input.split(/\s+/)[0].replace(/[^a-zA-Z]/g,'').toLowerCase();
+    action = () => openRules(kw);
+  } else if (entry.category === 'draw') {
+    action = () => openDraw();
+  }
+
+  return { text, action };
+}
+</script>
+</body>
+</html>
