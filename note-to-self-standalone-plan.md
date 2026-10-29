@@ -2,7 +2,7 @@
 
 ## Overview
 
-Convert the Lovable/TanStack MVP into a **single self-contained `index.html`** file that
+Convert the TanStack MVP into a **single self-contained `index.html`** file that
 implements the agreed feature set using only vanilla HTML, CSS, and JavaScript —
 no build tools, no framework, no npm. The file must work by simply opening it in any
 modern browser (Chrome, Safari, Firefox, Edge).
@@ -39,7 +39,7 @@ two-screen shell: a **Home** screen and a **Chat** screen shown/hidden via a sin
 toggle — no router needed.
 
 **Expected Outcomes**
-- Light and dark color themes match the Lovable app.
+- Light and dark color themes match the original app.
 - Home screen renders with heading, subtitle, "Open Note to Self" button, and How-it-works cards.
 - Chat screen renders the header (avatar, title, settings icon), message list area, and bottom
   toolbar — correctly laid out at all viewport sizes.
@@ -48,7 +48,7 @@ toggle — no router needed.
 **Todo List**
 1. Create `note-to-self/index.html` with `<!DOCTYPE html>` boilerplate and a `<style>` block.
 2. Port all CSS custom properties from `styles.css` (`:root` and `.dark` blocks) verbatim.
-3. Add utility classes for bubbles, pills, cards, and buttons used in the Lovable UI.
+3. Add utility classes for bubbles, pills, cards, and buttons used in the original UI.
 4. Write the Home screen HTML matching `src/routes/index.tsx` layout and copy.
 5. Write the Chat screen HTML skeleton matching `src/routes/chat.tsx` layout.
 6. Add a `showScreen(id)` JS function that toggles visibility between `#screen-home` and
@@ -258,7 +258,7 @@ Guide: You're all set! Try sending that word now and watch what happens 🙂
 ### Sub-Task 7 — Polish & Accessibility
 
 **Intent**
-Ensure the finished file is accessible, visually faithful to the Lovable original, and works
+Ensure the finished file is accessible, visually faithful to the original design, and works
 as a zero-dependency drop-in. Validate all features end-to-end.
 
 **Expected Outcomes**
@@ -415,16 +415,16 @@ Clicking it manually switches between light and dark mode, persists the preferen
 
 **Intent**
 Replace the placeholder `<div class="how-card-img">` elements in the Home screen "How it
-works" section with actual screenshots of the finished app — matching the Lovable MVP
-exactly. Screenshots are captured manually (or via browser DevTools), cropped, and embedded
-as base-64 PNGs directly in the HTML so the file stays self-contained.
+works" section with actual screenshots of the finished app. Screenshots are captured
+manually (or via browser DevTools), cropped, and embedded as base-64 PNGs directly in
+the HTML so the file stays self-contained.
 
 **Expected Outcomes**
 - The "Note to Self" card shows a real screenshot of the chat interface with bubbles,
   the toolbar (Auto-Replies, Draw, Schedule), and the input bar.
 - The "Auto-Replies" card shows a real screenshot of the Auto-Replies dialog with a rule
   listed and the add-rule form visible.
-- Images are `h-96 w-full object-contain` matching the Lovable original.
+- Images are `h-96 w-full object-contain`.
 - No external image URLs — screenshots are embedded as `data:image/png;base64,...`.
 
 **Todo List**
