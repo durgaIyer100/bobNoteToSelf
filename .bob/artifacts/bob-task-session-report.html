@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bob Task Session Report — Note to Self</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.6; background: #ffffff; color: #1f2328; padding: 32px 16px 48px; }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  .report-header { border-bottom: 2px solid #3b82d4; padding-bottom: 20px; margin-bottom: 28px; }
+  .report-header .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #57606a; margin-bottom: 6px; }
+  .report-header h1 { font-size: 22px; font-weight: 700; color: #1f2328; margin-bottom: 4px; }
+  .report-header .meta { font-size: 12px; color: #57606a; }
+  .report-header .meta span { margin-right: 18px; }
+
+  .gh-banner { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 18px; margin-bottom: 28px; display: flex; align-items: center; gap: 14px; }
+  .gh-icon { flex-shrink: 0; width: 32px; height: 32px; }
+  .gh-banner .gh-text .gh-title { font-weight: 600; font-size: 13px; }
+  .gh-banner .gh-text .gh-url a { color: #3b82d4; text-decoration: none; font-size: 12px; }
+  .gh-banner .gh-text .gh-url a:hover { text-decoration: underline; }
+  .commits-badge { background: #3b82d4; color: #fff; font-size: 11px; font-weight: 600; border-radius: 12px; padding: 3px 10px; white-space: nowrap; margin-left: auto; }
+
+  .section { margin-bottom: 32px; }
+  .section h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #57606a; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 14px; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .sum-card { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 12px; text-align: center; }
+  .sum-card .val { font-size: 24px; font-weight: 700; color: #3b82d4; line-height: 1.2; }
+  .sum-card .lbl { font-size: 11px; color: #57606a; margin-top: 2px; }
+
+  /* Activity log */
+  .activity-log { display: flex; flex-direction: column; }
+  .activity-day { display: flex; gap: 0; }
+  .activity-date-col { display: flex; flex-direction: column; align-items: center; width: 110px; flex-shrink: 0; padding-top: 3px; }
+  .activity-dot { width: 11px; height: 11px; border-radius: 50%; background: #3b82d4; flex-shrink: 0; }
+  .activity-date { font-size: 10px; font-weight: 700; color: #3b82d4; text-align: center; margin-top: 4px; line-height: 1.3; }
+  .activity-line { width: 2px; background: #e5e7eb; flex: 1; margin-top: 5px; min-height: 16px; }
+  .activity-day:last-child .activity-line { display: none; }
+  .activity-body { padding: 0 0 22px 16px; flex: 1; }
+  .activity-body ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .activity-body ul li { font-size: 13px; padding-left: 13px; position: relative; color: #1f2328; }
+  .activity-body ul li::before { content: "–"; position: absolute; left: 0; color: #57606a; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #f7f8fa; border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; font-weight: 600; font-size: 12px; }
+  tbody td { border: 1px solid #e5e7eb; padding: 7px 10px; vertical-align: top; }
+  tbody tr:nth-child(even) td { background: #f7f8fa; }
+
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; border-radius: 10px; padding: 2px 8px; white-space: nowrap; }
+  .badge-done   { background: #dcfce7; color: #166534; }
+  .badge-pushed { background: #dbeafe; color: #1e40af; }
+  .badge-next   { background: #fef9c3; color: #854d0e; }
+
+  .commit-list { list-style: none; }
+  .commit-list li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+  .commit-list li:last-child { border-bottom: none; }
+  .commit-hash { font-family: "SF Mono", "Fira Code", monospace; font-size: 11px; background: #f0f0f0; border-radius: 3px; padding: 2px 6px; color: #57606a; flex-shrink: 0; margin-top: 2px; }
+  .commit-date { font-size: 11px; color: #57606a; white-space: nowrap; margin-top: 2px; flex-shrink: 0; }
+
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .feature-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 5px; padding: 8px 10px; }
+  .feature-dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82d4; flex-shrink: 0; margin-top: 5px; }
+
+  .file-tag { font-family: "SF Mono", "Fira Code", monospace; font-size: 11px; background: #f0f0f0; border-radius: 3px; padding: 1px 5px; color: #1f2328; }
+
+  .next-list { list-style: none; counter-reset: ns; }
+  .next-list li { counter-increment: ns; padding: 8px 10px 8px 40px; position: relative; border: 1px solid #e5e7eb; border-radius: 5px; margin-bottom: 6px; font-size: 13px; }
+  .next-list li::before { content: counter(ns); position: absolute; left: 12px; top: 8px; width: 20px; height: 20px; background: #3b82d4; color: #fff; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 20px; text-align: center; }
+
+  .footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 11px; color: #57606a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="report-header">
+    <div class="label">IBM Bob · Task Session Report · v7</div>
+    <h1>Note to Self — AI-Powered Personal Chat App</h1>
+    <div class="meta">
+      <span><strong>Project:</strong> bobNoteToSelf</span>
+      <span><strong>Branch:</strong> main</span>
+      <span><strong>Author:</strong> durgaIyer100</span>
+    </div>
+  </div>
+
+  <div class="gh-banner">
+    <svg class="gh-icon" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#1f2328"/><path fill-rule="evenodd" clip-rule="evenodd" d="M16 6C10.477 6 6 10.477 6 16c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0116 11.82c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C23.138 24.163 26 20.417 26 16c0-5.523-4.477-10-10-10z" fill="white"/></svg>
+    <div class="gh-text">
+      <div class="gh-title">GitHub Repository</div>
+      <div class="gh-url"><a href="https://github.com/durgaIyer100/bobNoteToSelf" target="_blank">https://github.com/durgaIyer100/bobNoteToSelf</a></div>
+    </div>
+    <div class="commits-badge">7 commits · main</div>
+  </div>
+
+  <div class="section">
+    <h2>Session at a Glance</h2>
+    <div class="summary-grid">
+      <div class="sum-card"><div class="val">15</div><div class="lbl">Sub-tasks completed</div></div>
+      <div class="sum-card"><div class="val">1,950+</div><div class="lbl">Lines in index.html</div></div>
+      <div class="sum-card"><div class="val">7</div><div class="lbl">GitHub commits pushed</div></div>
+      <div class="sum-card"><div class="val">0</div><div class="lbl">Lovable trademarks left</div></div>
+    </div>
+  </div>
+
+  <!-- Activity Log -->
+  <div class="section">
+    <h2>Activity Log</h2>
+    <div class="activity-log">
+
+      <div class="activity-day">
+        <div class="activity-date-col">
+          <div class="activity-dot"></div>
+          <div class="activity-date">Oct 22, 2026</div>
+          <div class="activity-line"></div>
+        </div>
+        <div class="activity-body">
+          <ul>
+            <li>Project scaffolded — repo created, source files uploaded to GitHub (bb53768, 9a62e0f, c9fd792)</li>
+            <li>Built the full design system — oklch color tokens, dark/light CSS variables, two-screen router</li>
+            <li>Implemented chat core — send, bubbles (user/auto/scheduled/guide), timestamps, delete, auto-scroll</li>
+            <li>Added Auto-Replies panel with keyword matching and localStorage persistence</li>
+            <li>Added scheduled messages — datetime picker, setTimeout delivery, green scheduled bubbles</li>
+            <li>Added drawing panel — canvas pointer drawing, PNG exported and embedded in chat bubble</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="activity-day">
+        <div class="activity-date-col">
+          <div class="activity-dot"></div>
+          <div class="activity-date">Oct 28, 2026</div>
+          <div class="activity-line"></div>
+        </div>
+        <div class="activity-body">
+          <ul>
+            <li>Built AI onboarding guide — first-visit walkthrough, feeling detection, step-by-step flow (b0a3505)</li>
+            <li>Added Agentic RAG — 11-entry knowledge base, keyword scorer, 3-turn context window, UI actions</li>
+            <li>Added GenRAG generator — slot extraction, intensity detection, template rendering, context stitching</li>
+            <li>Added content moderation — safe messaging for self-harm inputs, crisis resources response</li>
+            <li>Step-wait fix — onboarding waits for user reply before advancing each step</li>
+            <li>Guide toggle privacy tip — Step 1 now explains how to turn the guide off (47a2972)</li>
+            <li>Fixed guide not firing when "Save messages" is off — guide-done flag no longer cached</li>
+            <li>Fixed onboarding question-blindness — input was cleared before question check ran; passed trimmed text directly</li>
+            <li>Fixed guide steps advancing on questions — "what can I do" now answered in place, step not moved</li>
+            <li>Redesigned theme toggle — large pill with icon inside thumb (sun/moon), spring animation, 0.35s page cross-fade</li>
+            <li>Moved theme toggle to fixed top-right — always visible on both screens regardless of scroll</li>
+            <li>Guide cleanup on toggle-off — guide bubbles removed if user has not replied yet</li>
+            <li>Added toast notifications — pill toast for guide on/off, auto-dismisses after 2.8s, aria-live (73cf1bf)</li>
+            <li>Removed all Lovable trademark references from plan doc and src folder (1d7f0cd)</li>
+            <li>Updated session report with activity log and committed to GitHub</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sub-task table -->
+  <div class="section">
+    <h2>Full Sub-task Completion Log</h2>
+    <table>
+      <thead><tr><th>#</th><th>Sub-task</th><th>Key deliverable</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Design System &amp; Shell</td><td>oklch token set, dark/light CSS, screen router</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>2</td><td>Chat Core</td><td>Send, bubbles, timestamps, delete, auto-scroll</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>3</td><td>Auto-Replies Panel</td><td>Rules dialog, keyword matching, localStorage</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>4</td><td>Scheduled Messages</td><td>datetime-local picker, setTimeout delivery</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>5</td><td>Drawing Panel</td><td>Canvas + pointer drawing, PNG embed in chat</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>6</td><td>AI Onboarding Guide</td><td>First-visit walkthrough, feeling detection</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>7</td><td>Polish &amp; Accessibility</td><td>aria-labels, keyboard Escape, dark-mode query</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>8</td><td>Agentic RAG</td><td>11-entry KB, keyword scorer, 3-turn context, UI actions</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>8b</td><td>Step-wait + Privacy tip</td><td>Onboarding waits for reply; Step 1 explains Guide toggle</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>8c</td><td>Content Moderation</td><td>Self-harm safe messaging + crisis resources</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>8d</td><td>GenRAG Generator</td><td>extractSlots, detectIntensity, renderTemplate, stitchContext</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>9</td><td>Dark / Light Toggle</td><td>Fixed pill toggle, icon-in-thumb, smooth cross-fade</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>—</td><td>Guide cleanup on toggle-off</td><td>Guide messages removed before first user reply</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>—</td><td>Toast notifications</td><td>Pill toast for guide on/off with aria-live</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>—</td><td>Trademark cleanup</td><td>All Lovable references removed from code and docs</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>10</td><td>Real Screenshots</td><td>Replace placeholder cards with captured PNGs</td><td><span class="badge badge-next">Next up</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Commit log -->
+  <div class="section">
+    <h2>GitHub Commit History</h2>
+    <ul class="commit-list">
+      <li><span class="commit-hash">1d7f0cd</span><span class="commit-date">Oct 28, 2026</span><div><strong>Remove all Lovable trademark references from plan doc and src folder</strong></div></li>
+      <li><span class="commit-hash">73cf1bf</span><span class="commit-date">Oct 28, 2026</span><div><strong>Fix toggle, guide msg cleanup, toast notifications, question-aware onboarding</strong></div></li>
+      <li><span class="commit-hash">47a2972</span><span class="commit-date">Oct 28, 2026</span><div><strong>Add GenRAG generator, content moderation, safe messaging, step-wait onboarding</strong></div></li>
+      <li><span class="commit-hash">b0a3505</span><span class="commit-date">Oct 28, 2026</span><div><strong>Add standalone Note to Self app — Agentic RAG guide, dark/light toggle, full chat features</strong></div></li>
+      <li><span class="commit-hash">c9fd792</span><span class="commit-date">Oct 22, 2026</span><div><strong>Add files via upload</strong></div></li>
+      <li><span class="commit-hash">9a62e0f</span><span class="commit-date">Oct 22, 2026</span><div><strong>Add files via upload</strong></div></li>
+      <li><span class="commit-hash">bb53768</span><span class="commit-date">Oct 22, 2026</span><div><strong>Initial commit</strong></div></li>
+    </ul>
+  </div>
+
+  <!-- Feature inventory -->
+  <div class="section">
+    <h2>Feature Inventory</h2>
+    <div class="feature-grid">
+      <div class="feature-item"><div class="feature-dot"></div><div>Chat bubbles — user / auto-reply / scheduled / guide</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Auto-reply rules with keyword &amp; drawing triggers</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Scheduled message delivery via setTimeout</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Canvas drawing panel — PNG embedded in chat</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Agentic RAG — 11-entry KB, 3-turn context window</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>GenRAG — slot extraction, intensity, template rendering</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Content moderation — safe messaging for self-harm</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Question-aware onboarding — answers in place, step held</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Fixed pill toggle — icon-in-thumb, always-visible fixed</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Toast notifications — guide on/off, aria-live, auto-dismiss</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Guide cleanup — messages removed before first reply</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Save-messages toggle — localStorage persist or fresh session</div></div>
+    </div>
+  </div>
+
+  <!-- Project assets -->
+  <div class="section">
+    <h2>Project Assets</h2>
+    <table>
+      <thead><tr><th>File</th><th>Role</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="file-tag">note-to-self/index.html</span></td><td>The app — fully self-contained single-file</td><td>1,950+ lines · 6 localStorage keys · 0 dependencies</td></tr>
+        <tr><td><span class="file-tag">note-to-self-standalone-plan.md</span></td><td>Implementation plan &amp; sub-task specs</td><td>Living document — Lovable refs removed</td></tr>
+        <tr><td><span class="file-tag">note-to-self-src/</span></td><td>Original TanStack MVP source — design reference only</td><td>Not committed · Lovable-branded files deleted</td></tr>
+        <tr><td><span class="file-tag">.bob/artifacts/bob-task-session-report.html</span></td><td>This report</td><td>v7 — committed to GitHub</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Next steps -->
+  <div class="section">
+    <h2>Remaining Work</h2>
+    <ol class="next-list">
+      <li><strong>Sub-Task 10 — Real screenshots:</strong> Open index.html in Chrome at 390×844 (iPhone viewport), capture Home and Chat screens, convert to base-64, replace the two <code>&lt;div class="how-card-img"&gt;</code> placeholders.</li>
+      <li><strong>Optional — Profile photo:</strong> User-selected avatar stored in localStorage, shown on Home screen greeting.</li>
+      <li><strong>Optional — Voice transcription:</strong> Web Speech API, no external service required.</li>
+    </ol>
+  </div>
+
+  <div class="footer">Made with IBM Bob</div>
+</div>
+</body>
+</html>
