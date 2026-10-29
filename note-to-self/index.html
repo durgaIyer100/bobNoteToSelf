@@ -929,6 +929,11 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAll();
 });
 
+// Tracks which onboarding step the user is currently waiting on.
+// 0 = not started, 1+ = waiting for reply to advance, -1 = complete.
+let onboardingStep = 0;
+let onboardingSteps = [];
+
 function sendMessage(e) {
   e.preventDefault();
   const inp = document.getElementById('msg-input');
@@ -937,7 +942,7 @@ function sendMessage(e) {
 
   const whenVal = document.getElementById('schedule-input').value;
 
-  // Guide is awaiting feeling reply
+  // Step A: guide just asked "how are you feeling?" — capture feeling & start steps
   if (awaitingFeelingReply) {
     awaitingFeelingReply = false;
     feelingWord = trimmed.split(/\s+/)[0].replace(/[^a-zA-Z]/g, '').toLowerCase();
@@ -945,6 +950,19 @@ function sendMessage(e) {
     inp.value = '';
     document.getElementById('btn-send').disabled = true;
     runGuideResponse(trimmed.toLowerCase());
+    renderMessages();
+    persistChat();
+    return;
+  }
+
+  // Step B: onboarding is in progress — user reply advances to next step
+  if (guideEnabled && onboardingStep > 0 && onboardingSteps.length) {
+    pushMsg({ text: trimmed });
+    inp.value = '';
+    document.getElementById('btn-send').disabled = true;
+    advanceOnboarding();
+    renderMessages();
+    persistChat();
     return;
   }
 
@@ -965,7 +983,7 @@ function sendMessage(e) {
   inp.value = '';
   document.getElementById('btn-send').disabled = true;
 
-  // Agentic RAG guide — fires if guide is on and onboarding is complete
+  // Step C: normal chat — GenRAG agent answers (guide must be on)
   if (guideEnabled) {
     const agentReply = askAgent(trimmed);
     if (agentReply) {
@@ -979,7 +997,7 @@ function sendMessage(e) {
     }
   }
 
-  // Auto-reply (fires independently of guide)
+  // Auto-reply fires independently of the guide
   const rule = matchReply(rules, trimmed, 'text');
   if (rule) {
     setTimeout(() => {
@@ -1139,9 +1157,14 @@ function onGuideToggle(enabled) {
 /* ── AI Onboarding Guide Agent ────────────────────────────────────────────── */
 function startGuide() {
   if (!guideEnabled || guideDone) return;
-  pushGuide('Hi! How are you feeling today? 🙂', () => {
-    awaitingFeelingReply = true;
-  });
+  // First message: greet + ask how they're feeling + explain the Guide toggle
+  const greeting =
+    'Hi! 👋 Welcome to Note to Self — your private space to check in with yourself.\n\n' +
+    'Before we start: you\'ll see a small "Guide" toggle at the top-right of this screen. ' +
+    'You can turn it off any time for a fully private, unguided experience. ' +
+    'Everything stays on your device — I never see or store what you write. 🔒\n\n' +
+    'Now — how are you feeling today? 🙂';
+  pushGuide(greeting, () => { awaitingFeelingReply = true; });
 }
 
 function pushGuide(text, cb) {
@@ -1151,42 +1174,83 @@ function pushGuide(text, cb) {
 }
 
 function runGuideResponse(input) {
-  const sadWords    = ['sad','down','depressed','anxious','anxious','worried','stressed','tired','exhausted','lost','alone','bad','terrible','awful','hurt'];
-  const happyWords  = ['happy','great','good','wonderful','excited','amazing','fantastic','joyful','awesome','blessed','grateful','well'];
-  const anxiousWords= ['anxious','nervous','scared','worried','overwhelmed','panic','stress','stressed'];
+  const sadWords     = ['sad','down','depressed','worried','stressed','tired','exhausted','lost','alone','bad','terrible','awful','hurt'];
+  const happyWords   = ['happy','great','good','wonderful','excited','amazing','fantastic','joyful','awesome','blessed','grateful','well'];
+  const anxiousWords = ['anxious','nervous','scared','overwhelmed','panic','stress'];
 
   let tone = 'other';
   if (anxiousWords.some(w => input.includes(w))) tone = 'anxious';
-  else if (sadWords.some(w => input.includes(w)))    tone = 'sad';
-  else if (happyWords.some(w => input.includes(w)))  tone = 'happy';
+  else if (sadWords.some(w => input.includes(w)))   tone = 'sad';
+  else if (happyWords.some(w => input.includes(w))) tone = 'happy';
 
-  const responses = {
-    sad:     "I hear you. It's okay to feel that way. 💙 Let me show you how to set up a kind auto-reply for moments like this.",
-    anxious: "That sounds tough. Take a breath — you've got this. Let me show you how to send yourself a calming note automatically.",
-    happy:   "That's wonderful! 🌟 Let me show you how to set up a little reminder to keep that feeling going.",
-    other:   "Thanks for sharing. Let me show you how to set up an Auto-Reply for moments like this.",
+  const empathy = {
+    sad:     "I hear you. It's completely okay to feel that way. 💙 I'd like to show you how to set up a kind auto-reply for moments like this — so even when you can't find the words, your note is already waiting for you.",
+    anxious: "That sounds really tough. Take a slow breath — in for 4, out for 4. 💛 Let me show you how to send yourself a calming note automatically, so it's there when you need it most.",
+    happy:   "That's wonderful! 🌟 Hold onto that feeling. Let me show you how to set up a little reminder so future-you can read this on a harder day.",
+    other:   "Thanks for sharing. 🙂 I'd love to show you how to set up an Auto-Reply — a kind message you write to yourself that arrives automatically when you need it.",
   };
 
-  const steps = [
-    responses[tone],
-    'Step 1 — Tap "Auto-Replies" in the toolbar below ↓',
-    'Step 2 — Type a keyword like "' + (feelingWord || 'sad') + '" and a kind message to yourself.',
-    'Step 3 — Tap "Add auto-reply" then "Save".',
-    "You're all set! Try sending that word now and watch what happens 🙂",
-  ];
+  const kw = feelingWord || 'sad';
 
-  let delay = 1200;
-  steps.forEach((text, i) => {
-    const t = setTimeout(() => {
-      pushGuide(text);
-      if (i === steps.length - 1) {
-        localStorage.setItem(GUIDE_DONE_KEY, 'true');
-        guideDone = true;
-      }
-    }, delay);
-    guideTimers.push(t);
-    delay += 1400;
-  });
+  // Each step ends with a prompt so the user knows to reply before we continue
+  onboardingSteps = [
+    empathy[tone] + '\n\nReply anything when you\'re ready and I\'ll walk you through it. (Or just say "skip" to explore on your own.)',
+    'Step 1 of 3 — Tap the 💬 Auto-Replies button in the toolbar below. It\'s the speech-bubble icon.\n\nLet me know when you\'ve opened it! 👇',
+    'Step 2 of 3 — In the Keywords field type "' + kw + '" (the word that matches how you\'re feeling). Then in the Message field write something kind to yourself.\n\nReply when you\'re ready for the last step.',
+    'Step 3 of 3 — Tap Add auto-reply, then Save. Now close the panel and send the word "' + kw + '" in the chat.\n\nLet me know what happened! 🎉',
+    'You did it! 🙌 Any time you type "' + kw + '" you\'ll get your own kind message back.\n\nThe guide will stay on to answer any questions about the app — or just to listen. Feel free to ask me anything. 🙂',
+  ];
+  onboardingStep = 0;
+
+  // Send first step after a short delay
+  const t = setTimeout(() => {
+    pushGuide(onboardingSteps[0]);
+    onboardingStep = 1;
+    renderMessages();
+    persistChat();
+  }, 1000);
+  guideTimers.push(t);
+}
+
+// Called when user sends a message while onboarding steps are in progress.
+// Advances to the next step (unless user says "skip").
+function advanceOnboarding() {
+  const inp = document.getElementById('msg-input').value.trim().toLowerCase();
+
+  // "skip" exits onboarding immediately
+  if (inp === 'skip') {
+    onboardingStep = -1;
+    onboardingSteps = [];
+    localStorage.setItem(GUIDE_DONE_KEY, 'true');
+    guideDone = true;
+    setTimeout(() => {
+      pushGuide('No problem! You can explore everything on your own. I\'m still here if you have questions. 🙂');
+      renderMessages(); persistChat();
+    }, 700);
+    return;
+  }
+
+  if (onboardingStep >= onboardingSteps.length) {
+    // All steps done
+    onboardingStep = -1;
+    onboardingSteps = [];
+    localStorage.setItem(GUIDE_DONE_KEY, 'true');
+    guideDone = true;
+    return;
+  }
+
+  const t = setTimeout(() => {
+    pushGuide(onboardingSteps[onboardingStep]);
+    onboardingStep++;
+    if (onboardingStep >= onboardingSteps.length) {
+      localStorage.setItem(GUIDE_DONE_KEY, 'true');
+      guideDone = true;
+      onboardingSteps = [];
+    }
+    renderMessages();
+    persistChat();
+  }, 900);
+  guideTimers.push(t);
 }
 
 /* ── Auto-Replies ─────────────────────────────────────────────────────────── */
@@ -1520,30 +1584,167 @@ function nextChunk(entry) {
   return chunk;
 }
 
-// ── Agent ───────────────────────────────────────────────────────────────────
-// Orchestrates retrieve → pick response → decide UI action.
-// Returns { text, action } or null if the guide should stay silent.
+/* ════════════════════════════════════════════════════════════════════
+   CONTENT MODERATION + SAFE MESSAGING  (8c)
+   Two separate paths — never conflated:
+   1. Self-harm → warm acknowledgement + crisis resources (never blocked)
+   2. Inappropriate → gentle redirect
+════════════════════════════════════════════════════════════════════ */
+
+const SELF_HARM_PATTERNS = [
+  /\b(kill\s+(my|me|myself))\b/i,
+  /\b(hurt\s+(my|me|myself))\b/i,
+  /\b(want\s+to\s+die)\b/i,
+  /\b(end\s+(my\s+life|it\s+all|everything))\b/i,
+  /\b(suicid[ea]?l?|self.?harm|cut\s+myself|cutting\s+myself)\b/i,
+  /\b(no\s+reason\s+to\s+live|can'?t\s+go\s+on)\b/i,
+];
+
+const INAPPROPRIATE_PATTERNS = [
+  /\b(porn|nude|naked|xxx|nsfw|rape|molest|pedophil)\b/i,
+  /\b(bomb|terror|shoot\s+up|mass\s+kill|attack\s+school)\b/i,
+  /\b(hack\s+(into|the)|malware|phishing|exploit\s+vuln)\b/i,
+];
+
+// Returns { type: 'self-harm' | 'inappropriate' | null }
+function moderateInput(input) {
+  if (SELF_HARM_PATTERNS.some(p => p.test(input)))  return { type: 'self-harm' };
+  if (INAPPROPRIATE_PATTERNS.some(p => p.test(input))) return { type: 'inappropriate' };
+  return null;
+}
+
+function safeMsgResponse() {
+  // Two bubbles: immediate acknowledgement, then crisis resources
+  setTimeout(() => {
+    pushGuide("I hear you, and I'm really glad you shared that with me. 💙 What you're feeling matters. You don't have to go through this alone.");
+    renderMessages(); persistChat();
+  }, 600);
+  setTimeout(() => {
+    pushGuide(
+      "Please reach out to someone who can really help right now:\n\n" +
+      "🇺🇸 Crisis Text Line — text HOME to 741741\n" +
+      "🇺🇸 988 Suicide & Crisis Lifeline — call or text 988\n" +
+      "🌍 findahelpline.com — resources worldwide\n\n" +
+      "I'm still here too. You can keep talking if you want to. 🙂"
+    );
+    renderMessages(); persistChat();
+  }, 2800);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   GENRAG GENERATOR LAYER  (8d)
+   Adds generative feel on top of RAG retrieval:
+   • extractSlots()   — pulls key phrases from the user's input
+   • detectIntensity()— mild / moderate / strong emotional signal
+   • renderTemplate() — fills {slots} in knowledge-base templates
+   • stitchContext()  — adds a natural reference to the prior turn
+════════════════════════════════════════════════════════════════════ */
+
+// Common English stop-words we strip before extracting meaningful slots
+const STOP_WORDS = new Set([
+  'i','me','my','myself','we','our','you','your','he','she','it','they','them',
+  'is','are','was','were','be','been','have','has','had','do','does','did',
+  'a','an','the','and','but','or','so','if','in','on','at','to','for','of',
+  'that','this','with','about','just','really','very','so','not','no','yes',
+  'can','will','would','could','should','may','might','get','got','feel','feeling',
+  'am','im','ive','id','ill','dont','cant','wont','its'
+]);
+
+// Extract up to 3 meaningful words from the user's input
+function extractSlots(input) {
+  return input
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+    .slice(0, 3);
+}
+
+// Rate how strongly emotional the input is
+function detectIntensity(input) {
+  const strong = ['so','very','extremely','really','absolutely','completely','totally','overwhelmingly'];
+  const words  = input.toLowerCase().split(/\s+/);
+  if (strong.some(s => words.includes(s))) return 'strong';
+  if (words.length > 8) return 'moderate';
+  return 'mild';
+}
+
+// Fill {slot_phrase} in a template string with extracted user words
+function renderTemplate(template, slots, input) {
+  const phrase = slots.length ? slots.join(' ') : input.split(/\s+/).slice(0,3).join(' ');
+  return template
+    .replace(/\{slot_phrase\}/g, phrase)
+    .replace(/\{input\}/g, input.length > 60 ? input.slice(0,57) + '…' : input);
+}
+
+// Add a natural contextual stitch referencing the previous guide turn
+function stitchContext(reply) {
+  if (agentContext.length < 2) return reply;
+  const prev = agentContext[agentContext.length - 1];
+  if (!prev || prev.role !== 'guide') return reply;
+
+  const bridges = [
+    'Building on that — ',
+    'To add to what I mentioned — ',
+    'Following on — ',
+  ];
+  // Only stitch 1-in-3 times so it doesn't feel mechanical
+  if (Math.random() < 0.33) {
+    const bridge = bridges[Math.floor(Math.random() * bridges.length)];
+    return bridge + reply.charAt(0).toLowerCase() + reply.slice(1);
+  }
+  return reply;
+}
+
+// ── Agent (GenRAG) ──────────────────────────────────────────────────────────
+// Moderate → retrieve → generate → stitch → action
 function askAgent(input) {
-  // Don't fire during onboarding or if guide is off
   if (!guideEnabled || awaitingFeelingReply) return null;
 
-  const entry = retrieve(input);
-  const text  = nextChunk(entry);
+  // 1. Content moderation
+  const mod = moderateInput(input);
+  if (mod && mod.type === 'self-harm') {
+    safeMsgResponse();
+    return null; // safeMsgResponse handles its own bubbles
+  }
+  if (mod && mod.type === 'inappropriate') {
+    return {
+      text: "I'm here to support you, but I can't help with that. 🙂 If you need someone to talk to, try sending yourself a kind note — or ask me anything about the app.",
+      action: null
+    };
+  }
 
-  // Update rolling context
-  agentContext.push({ role: 'user', text: input });
+  // 2. RAG retrieval
+  const entry    = retrieve(input);
+  const rawChunk = nextChunk(entry);
+
+  // 3. GenRAG: extract slots, detect intensity, render template
+  const slots     = extractSlots(input);
+  const intensity = detectIntensity(input);
+
+  // Intensify empathetic responses for strong signals
+  let generated = renderTemplate(rawChunk, slots, input);
+  if (intensity === 'strong' && entry.category.startsWith('emotional')) {
+    generated = generated.replace(
+      /^(I hear you\.|That sounds|Sending you)/,
+      'I really hear you —'
+    );
+  }
+
+  // 4. Context stitch for conversational continuity
+  const text = stitchContext(generated);
+
+  // 5. Update rolling context (session RAM only — never persisted)
+  agentContext.push({ role: 'user',  text: input });
   agentContext.push({ role: 'guide', text });
-  if (agentContext.length > 6) agentContext = agentContext.slice(-6); // keep last 3 turns
+  if (agentContext.length > 6) agentContext = agentContext.slice(-6);
 
-  // Decide UI action based on category
+  // 6. Decide UI action
   let action = null;
   if (entry.category === 'schedule') {
-    action = () => {
-      const row = document.getElementById('schedule-row');
-      if (row.style.display === 'none') toggleSchedule();
-    };
+    action = () => { const r = document.getElementById('schedule-row'); if (r.style.display === 'none') toggleSchedule(); };
   } else if (entry.category === 'auto-reply') {
-    const kw = feelingWord || input.split(/\s+/)[0].replace(/[^a-zA-Z]/g,'').toLowerCase();
+    const kw = slots[0] || feelingWord || '';
     action = () => openRules(kw);
   } else if (entry.category === 'draw') {
     action = () => openDraw();
