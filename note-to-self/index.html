@@ -1349,27 +1349,27 @@ function getFeatureSteps(feature) {
   const kw = feelingWord || 'sad';
   const features = {
     'auto-reply': [
-      'Step 1 of 3 — Tap the 💬 Auto-Replies button in the toolbar below.\n\nLet me know when you\'ve opened it! 👇',
-      'Step 2 of 3 — In the Keywords field type a word that triggers the reply (like "' + kw + '"). In the Message field write something kind to yourself.\n\nReply when ready!',
-      'Step 3 of 3 — Tap "Add auto-reply", then "Save". Close the panel and type your keyword in chat to test it.\n\nLet me know what happened! 🎉',
-      'You did it! 🙌 Any time you type "' + kw + '" your kind message will arrive automatically.\n\nFeel free to ask me about any other feature. 🙂',
+      'Step 1 of 3 — Tap the 💬 Auto-Replies button in the toolbar below to open the panel.\n\nReady for the next step? (yes / skip)',
+      'Step 2 of 3 — In the Keywords field type a word that triggers the reply (like "' + kw + '"). In the Message field write something kind to yourself.\n\nReady for the next step? (yes / skip)',
+      'Step 3 of 3 — Tap "Add auto-reply", then "Save". Close the panel and type your keyword in chat to test it.\n\nReady for the next step? (yes / skip)',
+      'You\'re all set! 🙌 Any time you type "' + kw + '" your kind message arrives automatically.\n\nWant me to walk you through another feature? Just ask!',
     ],
     'schedule': [
-      'Step 1 of 3 — Tap the ⏰ Schedule button in the toolbar below. A date and time picker will appear above the input.\n\nLet me know when you see it! 👇',
-      'Step 2 of 3 — Pick a future date and time, then type your message in the box as normal.\n\nReply here when you\'re ready to send it!',
-      'Step 3 of 3 — Hit the Send button. Your message will be held and delivered exactly at the time you chose — even if you close the tab (as long as Save messages is on).\n\nDid it arrive at the right time? 🎉',
-      'Great! 🙌 Your scheduled message was delivered on time.\n\nFeel free to ask me about any other feature. 🙂',
+      'Step 1 of 3 — Tap the ⏰ Schedule button in the toolbar. A date and time picker will appear above the input box.\n\nReady for the next step? (yes / skip)',
+      'Step 2 of 3 — Pick a future date and time, then type your message in the box as normal.\n\nReady for the next step? (yes / skip)',
+      'Step 3 of 3 — Hit Send. Your message is held and delivered at the exact time you chose.\n\nReady for the next step? (yes / skip)',
+      'Done! 🙌 Your message will appear in chat right on schedule.\n\nWant me to walk you through another feature? Just ask!',
     ],
     'draw': [
-      'Step 1 of 3 — Tap the ✏️ Draw button in the toolbar below. A drawing canvas will open.\n\nLet me know when you see it! 👇',
-      'Step 2 of 3 — Draw anything on the canvas using your finger or mouse. Use the category selector to label your drawing (e.g. "Mood", "Idea").\n\nReply when you\'re done drawing!',
-      'Step 3 of 3 — Tap "Send" (or "Schedule" to send it later). Your drawing will appear as a bubble in the chat.\n\nDid it show up? 🎉',
-      'Nice! 🎨 Your drawing is saved in the chat.\n\nFeel free to ask me about any other feature. 🙂',
+      'Step 1 of 3 — Tap the ✏️ Draw button in the toolbar. A canvas will open.\n\nReady for the next step? (yes / skip)',
+      'Step 2 of 3 — Draw anything using your finger or mouse. Use the category selector to label it (e.g. "Mood", "Idea").\n\nReady for the next step? (yes / skip)',
+      'Step 3 of 3 — Tap "Send" to post your drawing as a chat bubble (or "Schedule" to send it later).\n\nReady for the next step? (yes / skip)',
+      'Nice! 🎨 Your drawing is in the chat.\n\nWant me to walk you through another feature? Just ask!',
     ],
     'settings': [
-      'Step 1 of 2 — Tap the ⚙️ Settings icon in the top-right of the chat header.\n\nLet me know when the settings panel appears! 👇',
-      'Step 2 of 2 — You\'ll see two options:\n• Save messages on this device — keeps your chat between visits\n• Clear all messages — wipes the chat\n\nToggle "Save messages" on if you want your notes to persist. Reply when you\'ve had a look!',
-      'That\'s all of settings! Simple by design — your notes stay private and on your device only. 🔒\n\nFeel free to ask me about any other feature. 🙂',
+      'Step 1 of 2 — Tap the ⚙️ Settings icon in the top-right of the header.\n\nReady for the next step? (yes / skip)',
+      'Step 2 of 2 — You\'ll see two options:\n• Save messages on this device — keeps your chat between visits\n• Clear all messages — wipes the chat\n\nToggle "Save messages" on to keep your notes. Ready for the next step? (yes / skip)',
+      'All done! 🔒 Your notes stay private and on your device only.\n\nWant me to walk you through another feature? Just ask!',
     ],
   };
   return features[feature] || features['auto-reply'];
@@ -1406,7 +1406,7 @@ function runGuideResponse(input) {
   const featureNames  = { 'schedule': 'Schedule', 'draw': 'Draw', 'settings': 'Settings', 'auto-reply': 'Auto-Reply' };
 
   onboardingSteps = [
-    empathy[tone] + '\n\nReply anything when you\'re ready and I\'ll walk you through it. (Or just say "skip" to explore on your own.)',
+    empathy[tone] + '\n\nReady for the next step? (yes / skip)',
     ...getFeatureSteps('auto-reply'),
   ];
   onboardingStep = 0;
