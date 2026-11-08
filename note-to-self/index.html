@@ -1057,6 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // 0 = not started, 1+ = waiting for reply to advance, -1 = complete.
 let onboardingStep = 0;
 let onboardingSteps = [];
+// When the guide offers to switch feature, stores the pending feature name until user replies yes/no
+let pendingSwitchFeature = null;
 
 function sendMessage(e) {
   e.preventDefault();
@@ -1065,6 +1067,20 @@ function sendMessage(e) {
   if (!trimmed) return;
 
   const whenVal = document.getElementById('schedule-input').value;
+
+  // Schedule check FIRST — always wins over guide steps so scheduled time is never ignored
+  if (whenVal) {
+    const delay = new Date(whenVal).getTime() - now();
+    if (delay <= 0) { alert('Pick a time in the future.'); return; }
+    scheduleMsg({ text: trimmed }, whenVal);
+    inp.value = '';
+    document.getElementById('schedule-input').value = '';
+    document.getElementById('schedule-row').style.display = 'none';
+    document.getElementById('btn-send').disabled = true;
+    renderMessages();
+    persistChat();
+    return;
+  }
 
   // Step A: guide just asked "how are you feeling?" — capture feeling & start steps
   if (awaitingFeelingReply) {
@@ -1085,19 +1101,6 @@ function sendMessage(e) {
     inp.value = '';
     document.getElementById('btn-send').disabled = true;
     advanceOnboarding(trimmed);
-    renderMessages();
-    persistChat();
-    return;
-  }
-
-  if (whenVal) {
-    const delay = new Date(whenVal).getTime() - now();
-    if (delay <= 0) { alert('Pick a time in the future.'); return; }
-    scheduleMsg({ text: trimmed }, whenVal);
-    inp.value = '';
-    document.getElementById('schedule-input').value = '';
-    document.getElementById('schedule-row').style.display = 'none';
-    document.getElementById('btn-send').disabled = true;
     renderMessages();
     persistChat();
     return;
@@ -1159,11 +1162,23 @@ function deliverScheduled(id) {
 /* ── Schedule UI ──────────────────────────────────────────────────────────── */
 function toggleSchedule() {
   const row = document.getElementById('schedule-row');
-  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+  const opening = row.style.display === 'none';
+  row.style.display = opening ? 'flex' : 'none';
+  if (opening) {
+    // Set min to right now so the browser blocks past times natively
+    const pad = n => String(n).padStart(2, '0');
+    const d = new Date();
+    const minVal = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+                   'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    document.getElementById('schedule-input').min = minVal;
+  }
 }
 function cancelSchedule() {
   document.getElementById('schedule-input').value = '';
   document.getElementById('schedule-row').style.display = 'none';
+  // Restore send button state based on whether there is text typed
+  const inp = document.getElementById('msg-input');
+  document.getElementById('btn-send').disabled = !inp.value.trim();
 }
 
 /* ── Settings ─────────────────────────────────────────────────────────────── */
@@ -1286,6 +1301,7 @@ function onGuideToggle(enabled) {
     awaitingFeelingReply = false;
     onboardingStep = 0;
     onboardingSteps = [];
+    pendingSwitchFeature = null;
     // Remove all guide messages the user hasn't replied to yet (guide bubbles only)
     const hadUserReply = messages.some(m => !m.guide && !m.auto);
     if (!hadUserReply) {
@@ -1328,6 +1344,46 @@ function pushGuide(text, cb) {
   if (cb) cb();
 }
 
+// ── Step sets for each feature walkthrough ─────────────────────────────────
+function getFeatureSteps(feature) {
+  const kw = feelingWord || 'sad';
+  const features = {
+    'auto-reply': [
+      'Step 1 of 3 — Tap the 💬 Auto-Replies button in the toolbar below.\n\nLet me know when you\'ve opened it! 👇',
+      'Step 2 of 3 — In the Keywords field type a word that triggers the reply (like "' + kw + '"). In the Message field write something kind to yourself.\n\nReply when ready!',
+      'Step 3 of 3 — Tap "Add auto-reply", then "Save". Close the panel and type your keyword in chat to test it.\n\nLet me know what happened! 🎉',
+      'You did it! 🙌 Any time you type "' + kw + '" your kind message will arrive automatically.\n\nFeel free to ask me about any other feature. 🙂',
+    ],
+    'schedule': [
+      'Step 1 of 3 — Tap the ⏰ Schedule button in the toolbar below. A date and time picker will appear above the input.\n\nLet me know when you see it! 👇',
+      'Step 2 of 3 — Pick a future date and time, then type your message in the box as normal.\n\nReply here when you\'re ready to send it!',
+      'Step 3 of 3 — Hit the Send button. Your message will be held and delivered exactly at the time you chose — even if you close the tab (as long as Save messages is on).\n\nDid it arrive at the right time? 🎉',
+      'Great! 🙌 Your scheduled message was delivered on time.\n\nFeel free to ask me about any other feature. 🙂',
+    ],
+    'draw': [
+      'Step 1 of 3 — Tap the ✏️ Draw button in the toolbar below. A drawing canvas will open.\n\nLet me know when you see it! 👇',
+      'Step 2 of 3 — Draw anything on the canvas using your finger or mouse. Use the category selector to label your drawing (e.g. "Mood", "Idea").\n\nReply when you\'re done drawing!',
+      'Step 3 of 3 — Tap "Send" (or "Schedule" to send it later). Your drawing will appear as a bubble in the chat.\n\nDid it show up? 🎉',
+      'Nice! 🎨 Your drawing is saved in the chat.\n\nFeel free to ask me about any other feature. 🙂',
+    ],
+    'settings': [
+      'Step 1 of 2 — Tap the ⚙️ Settings icon in the top-right of the chat header.\n\nLet me know when the settings panel appears! 👇',
+      'Step 2 of 2 — You\'ll see two options:\n• Save messages on this device — keeps your chat between visits\n• Clear all messages — wipes the chat\n\nToggle "Save messages" on if you want your notes to persist. Reply when you\'ve had a look!',
+      'That\'s all of settings! Simple by design — your notes stay private and on your device only. 🔒\n\nFeel free to ask me about any other feature. 🙂',
+    ],
+  };
+  return features[feature] || features['auto-reply'];
+}
+
+// Detect which feature the user is asking about
+function detectFeatureIntent(inp) {
+  if (/schedule|clock|timer|later|time|remind/i.test(inp))    return 'schedule';
+  if (/draw|sketch|doodle|paint|canvas|picture|image/i.test(inp)) return 'draw';
+  if (/setting|save|clear|storage|privacy/i.test(inp))        return 'settings';
+  if (/auto.?reply|auto reply|keyword|automatic|rule/i.test(inp)) return 'auto-reply';
+  return null;
+}
+
 function runGuideResponse(input) {
   const sadWords     = ['sad','down','depressed','worried','stressed','tired','exhausted','lost','alone','bad','terrible','awful','hurt'];
   const happyWords   = ['happy','great','good','wonderful','excited','amazing','fantastic','joyful','awesome','blessed','grateful','well'];
@@ -1345,22 +1401,25 @@ function runGuideResponse(input) {
     other:   "Thanks for sharing. 🙂 I'd love to show you how to set up an Auto-Reply — a kind message you write to yourself that arrives automatically when you need it.",
   };
 
-  const kw = feelingWord || 'sad';
+  // Check if the user's feeling reply hints at a different feature
+  const featureIntent = detectFeatureIntent(input);
+  const featureNames  = { 'schedule': 'Schedule', 'draw': 'Draw', 'settings': 'Settings', 'auto-reply': 'Auto-Reply' };
 
-  // Each step ends with a prompt so the user knows to reply before we continue
   onboardingSteps = [
     empathy[tone] + '\n\nReply anything when you\'re ready and I\'ll walk you through it. (Or just say "skip" to explore on your own.)',
-    'Step 1 of 3 — Tap the 💬 Auto-Replies button in the toolbar below. It\'s the speech-bubble icon.\n\nLet me know when you\'ve opened it! 👇',
-    'Step 2 of 3 — In the Keywords field type "' + kw + '" (the word that matches how you\'re feeling). Then in the Message field write something kind to yourself.\n\nReply when you\'re ready for the last step.',
-    'Step 3 of 3 — Tap Add auto-reply, then Save. Now close the panel and send the word "' + kw + '" in the chat.\n\nLet me know what happened! 🎉',
-    'You did it! 🙌 Any time you type "' + kw + '" you\'ll get your own kind message back.\n\nThe guide will stay on to answer any questions about the app — or just to listen. Feel free to ask me anything. 🙂',
+    ...getFeatureSteps('auto-reply'),
   ];
   onboardingStep = 0;
 
-  // Send first step after a short delay
   const t = setTimeout(() => {
-    pushGuide(onboardingSteps[0]);
-    onboardingStep = 1;
+    // If feeling reply mentioned a different feature, offer to switch before starting
+    if (featureIntent && featureIntent !== 'auto-reply') {
+      pendingSwitchFeature = featureIntent;
+      pushGuide(empathy[tone] + '\n\nWould you like me to walk you through ' + featureNames[featureIntent] + ' instead? (yes / no)');
+    } else {
+      pushGuide(onboardingSteps[0]);
+      onboardingStep = 1;
+    }
     renderMessages();
     persistChat();
   }, 1000);
@@ -1368,7 +1427,7 @@ function runGuideResponse(input) {
 }
 
 // Called when user sends a message while onboarding steps are in progress.
-// Answers questions in place; only advances when the reply is a confirmation.
+// Answers questions; detects feature-switch intent; only advances on confirmation.
 function advanceOnboarding(raw) {
   const inp = (raw || '').toLowerCase();
 
@@ -1376,10 +1435,45 @@ function advanceOnboarding(raw) {
   if (inp === 'skip') {
     onboardingStep = -1;
     onboardingSteps = [];
+    pendingSwitchFeature = null;
     if (saveEnabled) localStorage.setItem(GUIDE_DONE_KEY, 'true');
     guideDone = true;
     setTimeout(() => {
       pushGuide('No problem! You can explore everything on your own. I\'m still here if you have questions. 🙂');
+      renderMessages(); persistChat();
+    }, 700);
+    return;
+  }
+
+  // Handle pending yes/no switch prompt
+  if (pendingSwitchFeature) {
+    const isYes = /^(yes|yeah|yep|sure|ok|okay|yup|please|y)$/i.test(inp.trim());
+    const isNo  = /^(no|nope|nah|not really|n)$/i.test(inp.trim());
+    if (isYes) {
+      const feature = pendingSwitchFeature;
+      pendingSwitchFeature = null;
+      onboardingSteps = getFeatureSteps(feature);
+      onboardingStep = 0;
+      setTimeout(() => {
+        pushGuide(onboardingSteps[0]);
+        onboardingStep = 1;
+        renderMessages(); persistChat();
+      }, 700);
+      return;
+    }
+    if (isNo) {
+      pendingSwitchFeature = null;
+      setTimeout(() => {
+        pushGuide(onboardingSteps[0]);
+        onboardingStep = 1;
+        renderMessages(); persistChat();
+      }, 700);
+      return;
+    }
+    // Unclear reply — ask again
+    setTimeout(() => {
+      const featureNames = { 'schedule': 'Schedule', 'draw': 'Draw', 'settings': 'Settings', 'auto-reply': 'Auto-Reply' };
+      pushGuide('Just reply yes or no — would you like me to walk you through ' + featureNames[pendingSwitchFeature] + '?');
       renderMessages(); persistChat();
     }, 700);
     return;
@@ -1390,24 +1484,64 @@ function advanceOnboarding(raw) {
     /^(what|how|why|where|when|can i|do i|what are|what can|tell me|help|huh|i don|not sure|confused|options|option|don't understand|dont understand|explain)/.test(inp);
 
   if (isQuestion) {
-    const stepHints = [
-      // step 0 — after empathy, waiting for "ready"
-      'You can reply anything to continue — I\'ll walk you through it step by step. Or say "skip" to explore on your own. 🙂',
-      // step 1 — waiting for user to open Auto-Replies
-      'Look for the 💬 speech-bubble button in the toolbar at the bottom of the screen. Tap it to open the Auto-Replies panel, then reply here when it\'s open!',
-      // step 2 — waiting for user to fill keyword + message
-      'In the Auto-Replies panel you\'ll see two fields:\n• Keywords — type a word matching your mood (like "' + (feelingWord || 'okayish') + '")\n• Message — write something kind to yourself\nTap "Add auto-reply" when done, then reply here!',
-      // step 3 — waiting for user to save and test
-      'Tap the blue "Add auto-reply" button, then tap "Save" at the top. Close the panel and type your keyword in the chat to see your message arrive. 🎉',
-    ];
-    const hint = stepHints[onboardingStep] ||
-      'Feel free to ask me anything — I\'m here to help. 🙂 Or say "skip" to explore on your own.';
+    const featureHints = {
+      'auto-reply': [
+        'You can reply anything to continue — I\'ll walk you through it step by step. Or say "skip" to explore on your own. 🙂',
+        'Look for the 💬 speech-bubble button in the toolbar at the bottom. Tap it to open the Auto-Replies panel, then reply here when it\'s open!',
+        'In the Auto-Replies panel:\n• Keywords — type a word matching your mood\n• Message — write something kind to yourself\nTap "Add auto-reply" when done!',
+        'Tap "Add auto-reply", then "Save". Close the panel and type your keyword in chat to test it. 🎉',
+      ],
+      'schedule': [
+        'Reply anything to continue. 🙂',
+        'Look for the ⏰ Schedule button in the toolbar. Tap it to see the date/time picker!',
+        'Pick a future date and time, then type your message and hit Send.',
+        'Your message is scheduled! It will appear in the chat at the time you chose.',
+      ],
+      'draw': [
+        'Reply anything to continue. 🙂',
+        'Look for the ✏️ Draw button in the toolbar. Tap it to open the drawing canvas!',
+        'Draw using your finger or mouse, pick a category, then tap Send.',
+        'Your drawing will appear as a bubble. Tap Send to post it!',
+      ],
+      'settings': [
+        'Reply anything to continue. 🙂',
+        'Tap the ⚙️ icon in the chat header to open settings.',
+        'You\'ll see Save messages and Clear all — toggle Save to keep your notes between visits.',
+      ],
+    };
+    // Detect which feature steps we're currently on
+    const currentFeature = onboardingSteps.length > 0 && onboardingSteps[0].includes('Schedule') ? 'schedule'
+      : onboardingSteps[0] && onboardingSteps[0].includes('Draw') ? 'draw'
+      : onboardingSteps[0] && onboardingSteps[0].includes('Settings') ? 'settings'
+      : 'auto-reply';
+    const hints = featureHints[currentFeature] || featureHints['auto-reply'];
+    const hint  = hints[onboardingStep] || 'Feel free to ask me anything — I\'m here to help. 🙂 Or say "skip" to explore on your own.';
     setTimeout(() => { pushGuide(hint); renderMessages(); persistChat(); }, 700);
-    return; // do NOT advance onboardingStep
+    return;
+  }
+
+  // After each confirmed step, check if user mentioned a different feature — offer to switch
+  const featureIntent = detectFeatureIntent(inp);
+  const featureNames  = { 'schedule': 'Schedule', 'draw': 'Draw', 'settings': 'Settings', 'auto-reply': 'Auto-Reply' };
+  const currentFeature = onboardingSteps[0] && onboardingSteps[0].includes('Schedule') ? 'schedule'
+    : onboardingSteps[0] && onboardingSteps[0].includes('Draw') ? 'draw'
+    : onboardingSteps[0] && onboardingSteps[0].includes('Settings') ? 'settings'
+    : 'auto-reply';
+
+  if (featureIntent && featureIntent !== currentFeature) {
+    // Finish current step first, then offer the switch
+    const t = setTimeout(() => {
+      pushGuide(onboardingSteps[onboardingStep] || 'Got it!');
+      onboardingStep++;
+      pendingSwitchFeature = featureIntent;
+      const msg = '\n\nWould you like me to walk you through ' + featureNames[featureIntent] + ' instead? (yes / no)';
+      setTimeout(() => { pushGuide(msg.trim()); renderMessages(); persistChat(); }, 800);
+    }, 900);
+    guideTimers.push(t);
+    return;
   }
 
   if (onboardingStep >= onboardingSteps.length) {
-    // All steps done
     onboardingStep = -1;
     onboardingSteps = [];
     if (saveEnabled) localStorage.setItem(GUIDE_DONE_KEY, 'true');
