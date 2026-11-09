@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <style>
 /* ─── Reset ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -489,70 +490,62 @@ body { background-color: var(--background); color: var(--foreground); }
 }
 .form-textarea:focus { box-shadow: 0 0 0 2px var(--ring); }
 
-/* ─── WHEEL PICKER DIALOG ────────────────────────────────────────────────── */
-.wheel-overlay {
-  position: fixed; inset: 0; z-index: 300;
-  background: rgba(0,0,0,0.5);
-  display: flex; align-items: flex-end; justify-content: center;
+/* ─── Flatpickr theme overrides ──────────────────────────────────────────── */
+.flatpickr-calendar {
+  background: var(--popover) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+  font-family: inherit !important;
 }
-.wheel-overlay.hidden { display: none; }
-.wheel-sheet {
-  width: 100%; max-width: 28rem;
-  background: var(--popover); color: var(--popover-foreground);
-  border-radius: 1.25rem 1.25rem 0 0;
-  padding: 1rem 1rem 2rem;
+.flatpickr-months, .flatpickr-month, .flatpickr-current-month,
+.flatpickr-monthDropdown-months, .flatpickr-weekdays,
+.flatpickr-weekday, .flatpickr-innerContainer, .flatpickr-rContainer,
+.flatpickr-time, .numInputWrapper {
+  background: var(--popover) !important;
+  color: var(--foreground) !important;
 }
-.wheel-sheet-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0.75rem;
+.flatpickr-day { color: var(--foreground) !important; }
+.flatpickr-day:hover { background: var(--muted) !important; border-color: var(--muted) !important; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover {
+  background: var(--primary) !important; border-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
 }
-.wheel-sheet-title { font-size: 1rem; font-weight: 600; }
-.wheel-columns {
-  display: flex; gap: 0; justify-content: center;
-  position: relative;
+.flatpickr-day.today:not(.selected) { border-color: var(--primary) !important; }
+.flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: var(--muted-foreground) !important; }
+.flatpickr-prev-month svg, .flatpickr-next-month svg { fill: var(--foreground) !important; }
+.flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg { fill: var(--primary) !important; }
+.flatpickr-time input, .flatpickr-time .flatpickr-am-pm {
+  color: var(--foreground) !important; background: var(--popover) !important;
 }
-/* Selection highlight bar behind the middle item */
-.wheel-columns::before {
-  content: '';
-  position: absolute;
-  left: 0; right: 0;
-  top: 50%; transform: translateY(-50%);
-  height: 2.5rem;
-  background: var(--muted);
-  border-radius: var(--radius);
-  pointer-events: none;
+.flatpickr-time input:hover, .flatpickr-time .flatpickr-am-pm:hover { background: var(--muted) !important; }
+.numInputWrapper span { border-color: var(--border) !important; }
+.numInputWrapper span svg path { fill: var(--foreground) !important; }
+.flatpickr-time .flatpickr-time-separator { color: var(--muted-foreground) !important; }
+
+/* ─── Responsive breakpoints — desktop (1024px+) ────────────────────────── */
+@media (min-width: 1024px) {
+  #screen-home { padding: 4rem 2rem; }
+  .home-inner { max-width: 72rem; }
+  .how-grid { gap: 2rem; }
+  .chat-header, .chat-subheader, .chat-settings-bar { max-width: 64rem; }
+  .chat-messages-inner { max-width: 64rem; }
+  .chat-form-inner { max-width: 64rem; }
+  .chat-form { padding: 0.75rem 2.5rem 1.5rem; }
+  .dialog-box { max-width: 36rem; }
+  .toolbar { justify-content: flex-start; gap: 1rem; }
+  .msg-bubble { max-width: 65%; }
 }
-.wheel-col {
-  flex: 1;
-  height: 12.5rem; /* 5 visible items × 2.5rem */
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  text-align: center;
-  position: relative;
+
+/* ─── Responsive breakpoints — wide desktop (1280px+) ───────────────────── */
+@media (min-width: 1280px) {
+  #screen-home { padding: 5rem 3rem; }
+  .home-inner { max-width: 88rem; }
+  .chat-header, .chat-subheader, .chat-settings-bar { max-width: 80rem; }
+  .chat-messages-inner { max-width: 80rem; }
+  .chat-form-inner { max-width: 80rem; }
+  .chat-form { padding: 0.75rem 3rem 1.5rem; }
 }
-.wheel-col::-webkit-scrollbar { display: none; }
-.wheel-col-label {
-  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--muted-foreground);
-  text-align: center; margin-bottom: 0.25rem;
-}
-.wheel-item {
-  height: 2.5rem;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem;
-  scroll-snap-align: center;
-  cursor: pointer;
-  border-radius: var(--radius);
-  color: var(--foreground);
-}
-/* Padding top/bottom so first and last items can centre */
-.wheel-spacer { height: 5rem; flex-shrink: 0; }
-.wheel-actions {
-  display: flex; gap: 0.75rem; margin-top: 1rem;
-}
-.wheel-actions button { flex: 1; }
 
 /* ─── DRAW DIALOG ────────────────────────────────────────────────────────── */
 #draw-canvas {
@@ -702,9 +695,8 @@ body { background-color: var(--background); color: var(--foreground); }
     <div class="chat-form-inner">
       <!-- Schedule row — shows selected time; hidden input holds the value -->
       <div class="schedule-row" id="schedule-row" style="display:none;">
-        <label style="font-size:0.875rem;">Schedule for</label>
-        <button type="button" id="schedule-display" class="schedule-input" onclick="openWheelPicker()" style="cursor:pointer;text-align:left;">Pick date &amp; time</button>
-        <input type="hidden" id="schedule-input" />
+        <label for="schedule-input" style="font-size:0.875rem;">Schedule for</label>
+        <input type="text" id="schedule-input" class="schedule-input" placeholder="Pick date &amp; time" readonly />
         <button type="button" class="btn btn-ghost btn-icon" onclick="cancelSchedule()" aria-label="Cancel scheduling" title="Cancel scheduling">
           <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -738,50 +730,6 @@ body { background-color: var(--background); color: var(--foreground); }
       </div>
     </div>
   </form>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     WHEEL DATE/TIME PICKER
-═══════════════════════════════════════════════════════════════════════ -->
-<div class="wheel-overlay hidden" id="wheel-picker" role="dialog" aria-modal="true" aria-label="Pick date and time">
-  <div class="wheel-sheet">
-    <div class="wheel-sheet-header">
-      <span class="wheel-sheet-title">Schedule for</span>
-      <button type="button" class="btn btn-ghost btn-icon" onclick="closeWheelPicker()" aria-label="Close picker">
-        <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div style="display:flex;gap:0.5rem;">
-      <div style="flex:1;">
-        <div class="wheel-col-label">Month</div>
-        <div class="wheel-col" id="wp-month"></div>
-      </div>
-      <div style="flex:1;">
-        <div class="wheel-col-label">Day</div>
-        <div class="wheel-col" id="wp-day"></div>
-      </div>
-      <div style="flex:1;">
-        <div class="wheel-col-label">Year</div>
-        <div class="wheel-col" id="wp-year"></div>
-      </div>
-      <div style="flex:0.8;">
-        <div class="wheel-col-label">Hour</div>
-        <div class="wheel-col" id="wp-hour"></div>
-      </div>
-      <div style="flex:0.8;">
-        <div class="wheel-col-label">Min</div>
-        <div class="wheel-col" id="wp-min"></div>
-      </div>
-      <div style="flex:0.7;">
-        <div class="wheel-col-label">AM/PM</div>
-        <div class="wheel-col" id="wp-ampm"></div>
-      </div>
-    </div>
-    <div class="wheel-actions">
-      <button type="button" class="btn btn-ghost" onclick="closeWheelPicker()">Cancel</button>
-      <button type="button" class="btn btn-primary" onclick="confirmWheelPicker()">Set time</button>
-    </div>
-  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
@@ -1137,6 +1085,16 @@ function deleteMessage(id) {
 
 /* ── Send message ─────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  // Flatpickr date+time picker for schedule
+  window._fp = flatpickr('#schedule-input', {
+    enableTime: true,
+    dateFormat: "Y-m-d\\TH:i",
+    minDate: "today",
+    minuteIncrement: 5,
+    time_24hr: false,
+    disableMobile: false
+  });
+
   const inp = document.getElementById('msg-input');
   const btn = document.getElementById('btn-send');
   inp.addEventListener('input', () => {
@@ -1276,96 +1234,10 @@ function toggleSchedule() {
   row.style.display = opening ? 'flex' : 'none';
 }
 function cancelSchedule() {
-  document.getElementById('schedule-input').value = '';
-  document.getElementById('schedule-display').textContent = 'Pick date & time';
+  if (window._fp) window._fp.clear();
   document.getElementById('schedule-row').style.display = 'none';
   const inp = document.getElementById('msg-input');
   document.getElementById('btn-send').disabled = !inp.value.trim();
-}
-
-/* ── Wheel date/time picker ───────────────────────────────────────────────── */
-const WP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function wpFill(colId, items, selectedIdx) {
-  const col = document.getElementById(colId);
-  col.innerHTML = '';
-  const top = document.createElement('div'); top.className = 'wheel-spacer'; col.appendChild(top);
-  items.forEach((label, i) => {
-    const el = document.createElement('div');
-    el.className = 'wheel-item';
-    el.textContent = label;
-    el.dataset.idx = i;
-    col.appendChild(el);
-  });
-  const bot = document.createElement('div'); bot.className = 'wheel-spacer'; col.appendChild(bot);
-  // Scroll to selected (each item is 2.5rem = 40px)
-  requestAnimationFrame(() => { col.scrollTop = selectedIdx * 40; });
-}
-
-function wpSelected(colId) {
-  const col = document.getElementById(colId);
-  return Math.round(col.scrollTop / 40);
-}
-
-function openWheelPicker() {
-  const now = new Date();
-  const yr = now.getFullYear();
-  const years = Array.from({length: 5}, (_, i) => String(yr + i));
-  const months = WP_MONTHS;
-  const days = Array.from({length: 31}, (_, i) => String(i + 1).padStart(2,'0'));
-  const hours = Array.from({length: 12}, (_, i) => String(i + 1));
-  const mins  = Array.from({length: 60}, (_, i) => String(i).padStart(2,'0'));
-  const ampm  = ['AM','PM'];
-
-  wpFill('wp-month', months, now.getMonth());
-  wpFill('wp-day',   days,   now.getDate() - 1);
-  wpFill('wp-year',  years,  0);
-  const h = now.getHours();
-  wpFill('wp-hour',  hours, h % 12 === 0 ? 0 : (h % 12) - 1);
-  wpFill('wp-min',   mins,  now.getMinutes());
-  wpFill('wp-ampm',  ampm,  h >= 12 ? 1 : 0);
-
-  document.getElementById('wheel-picker').classList.remove('hidden');
-}
-
-function closeWheelPicker() {
-  document.getElementById('wheel-picker').classList.add('hidden');
-}
-
-function confirmWheelPicker() {
-  const monthIdx = wpSelected('wp-month');
-  const day      = wpSelected('wp-day') + 1;
-  const yearIdx  = wpSelected('wp-year');
-  const hourIdx  = wpSelected('wp-hour');
-  const minIdx   = wpSelected('wp-min');
-  const ampmIdx  = wpSelected('wp-ampm');
-
-  const now = new Date();
-  const year = now.getFullYear() + yearIdx;
-  const month = monthIdx; // 0-based
-  // Convert 12-hour to 24-hour
-  let hour = hourIdx + 1; // 1–12
-  if (ampmIdx === 1 && hour !== 12) hour += 12;
-  if (ampmIdx === 0 && hour === 12) hour = 0;
-
-  const picked = new Date(year, month, day, hour, minIdx);
-  if (picked <= new Date()) {
-    showToast('Please pick a future time ⏰');
-    return;
-  }
-
-  // Store as ISO string in the hidden input
-  const pad = n => String(n).padStart(2,'0');
-  const isoVal = year + '-' + pad(month + 1) + '-' + pad(day) +
-                 'T' + pad(hour) + ':' + pad(minIdx);
-  document.getElementById('schedule-input').value = isoVal;
-
-  // Update the display button
-  const displayStr = WP_MONTHS[month] + ' ' + pad(day) + ', ' + year + ' · ' +
-                     (hourIdx + 1) + ':' + pad(minIdx) + ' ' + (ampmIdx === 0 ? 'AM' : 'PM');
-  document.getElementById('schedule-display').textContent = displayStr;
-
-  closeWheelPicker();
 }
 
 /* ── Settings ─────────────────────────────────────────────────────────────── */
@@ -2263,5 +2135,6 @@ function askAgent(input) {
   return { text, action };
 }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </body>
 </html>
