@@ -91,15 +91,15 @@
       <div class="gh-title">GitHub Repository</div>
       <div class="gh-url"><a href="https://github.com/durgaIyer100/bobNoteToSelf" target="_blank">https://github.com/durgaIyer100/bobNoteToSelf</a></div>
     </div>
-    <div class="commits-badge">7 commits · main</div>
+    <div class="commits-badge">8 commits · main</div>
   </div>
 
   <div class="section">
     <h2>Session at a Glance</h2>
     <div class="summary-grid">
-      <div class="sum-card"><div class="val">15</div><div class="lbl">Sub-tasks completed</div></div>
-      <div class="sum-card"><div class="val">1,950+</div><div class="lbl">Lines in index.html</div></div>
-      <div class="sum-card"><div class="val">7</div><div class="lbl">GitHub commits pushed</div></div>
+      <div class="sum-card"><div class="val">16</div><div class="lbl">Sub-tasks completed</div></div>
+      <div class="sum-card"><div class="val">2,140+</div><div class="lbl">Lines in index.html</div></div>
+      <div class="sum-card"><div class="val">8</div><div class="lbl">GitHub commits pushed</div></div>
       <div class="sum-card"><div class="val">IBM Bob</div><div class="lbl">Built entirely with</div></div>
     </div>
   </div>
@@ -154,6 +154,23 @@
         </div>
       </div>
 
+      <div class="activity-day">
+        <div class="activity-date-col">
+          <div class="activity-dot"></div>
+          <div class="activity-date">Today</div>
+          <div class="activity-line"></div>
+        </div>
+        <div class="activity-body">
+          <ul>
+            <li>Replaced native datetime-local input with Flatpickr — CDN script tag added before &lt;/body&gt;</li>
+            <li>Added Flatpickr init in DOMContentLoaded — <code>window._fp</code> with enableTime, minDate:"today", 5-min increments, AM/PM mode</li>
+            <li>Added Flatpickr CSS overrides — calendar themed to match app's CSS variables for both dark and light modes</li>
+            <li>Added responsive layout — 1024px and 1280px breakpoints for desktop, schedule panel widens on large screens</li>
+            <li>Committed flatpickr-schedule-plan.md alongside index.html changes (d268076)</li>
+          </ul>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -178,6 +195,7 @@
         <tr><td>—</td><td>Guide cleanup on toggle-off</td><td>Guide messages removed before first user reply</td><td><span class="badge badge-done">Done</span></td></tr>
         <tr><td>—</td><td>Toast notifications</td><td>Pill toast for guide on/off with aria-live</td><td><span class="badge badge-done">Done</span></td></tr>
         <tr><td>—</td><td>Trademark cleanup</td><td>All Lovable references removed from code and docs</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>—</td><td>Flatpickr Date Picker</td><td>CDN Flatpickr replaces native input; themed CSS overrides; responsive layout</td><td><span class="badge badge-done">Done</span></td></tr>
         <tr><td>10</td><td>Real Screenshots</td><td>Replace placeholder cards with captured PNGs</td><td><span class="badge badge-next">Next up</span></td></tr>
       </tbody>
     </table>
@@ -187,6 +205,8 @@
   <div class="section">
     <h2>GitHub Commit History</h2>
     <ul class="commit-list">
+      <li><span class="commit-hash">d268076</span><span class="commit-date">Today</span><div><strong>Add Flatpickr date+time picker — CDN script, init, CSS overrides, responsive layout</strong></div></li>
+      <li><span class="commit-hash">df559ca</span><span class="commit-date">Oct 28, 2026</span><div><strong>Emotional detection in guide, scroll-wheel date picker, theme toggle z-index fix</strong></div></li>
       <li><span class="commit-hash">1d7f0cd</span><span class="commit-date">Oct 28, 2026</span><div><strong>Remove all Lovable trademark references from plan doc and src folder</strong></div></li>
       <li><span class="commit-hash">73cf1bf</span><span class="commit-date">Oct 28, 2026</span><div><strong>Fix toggle, guide msg cleanup, toast notifications, question-aware onboarding</strong></div></li>
       <li><span class="commit-hash">47a2972</span><span class="commit-date">Oct 28, 2026</span><div><strong>Add GenRAG generator, content moderation, safe messaging, step-wait onboarding</strong></div></li>
@@ -212,6 +232,7 @@
       <div class="feature-item"><div class="feature-dot"></div><div>Fixed pill toggle — icon-in-thumb, always-visible fixed</div></div>
       <div class="feature-item"><div class="feature-dot"></div><div>Toast notifications — guide on/off, aria-live, auto-dismiss</div></div>
       <div class="feature-item"><div class="feature-dot"></div><div>Guide cleanup — messages removed before first reply</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Flatpickr date+time picker — themed calendar, 5-min increments, AM/PM, no past dates</div></div>
       <div class="feature-item"><div class="feature-dot"></div><div>Save-messages toggle — localStorage persist or fresh session</div></div>
     </div>
   </div>
@@ -222,10 +243,11 @@
     <table>
       <thead><tr><th>File</th><th>Role</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td><span class="file-tag">note-to-self/index.html</span></td><td>The app — fully self-contained single-file</td><td>1,950+ lines · 6 localStorage keys · 0 dependencies</td></tr>
+        <tr><td><span class="file-tag">note-to-self/index.html</span></td><td>The app — fully self-contained single-file</td><td>2,140+ lines · 6 localStorage keys · Flatpickr via CDN</td></tr>
         <tr><td><span class="file-tag">note-to-self-standalone-plan.md</span></td><td>Implementation plan &amp; sub-task specs</td><td>Living document — Lovable refs removed</td></tr>
         <tr><td><span class="file-tag">note-to-self-src/</span></td><td>Original TanStack MVP source — design reference only</td><td>Not committed · Lovable-branded files deleted</td></tr>
-        <tr><td><span class="file-tag">.bob/artifacts/bob-task-session-report.html</span></td><td>This report</td><td>v7 — committed to GitHub</td></tr>
+        <tr><td><span class="file-tag">flatpickr-schedule-plan.md</span></td><td>Flatpickr + responsive layout plan</td><td>4 sub-tasks — all complete</td></tr>
+        <tr><td><span class="file-tag">.bob/artifacts/bob-task-session-report.html</span></td><td>This report</td><td>v8 — committed to GitHub</td></tr>
       </tbody>
     </table>
   </div>
