@@ -1073,11 +1073,14 @@ function renderMessages() {
       const btn1 = document.createElement('button');
       btn1.className = 'guide-choice-btn';
       btn1.textContent = 'Yes';
-      btn1.onclick = () => handleGuideChoice('yes');
+      btn1.style.pointerEvents = 'auto'
+      btn1.onclick = () => {document.getElementByyId('msg-input').value = 'Yes'; sendMessage();};
+      
       const btn2 = document.createElement('button');
       btn2.className = 'guide-choice-btn';
       btn2.textContent = m.choices === 'yes-skip' ? 'Skip' : 'No';
-      btn2.onclick = () => handleGuideChoice(m.choices === 'yes-skip' ? 'skip' : 'no');
+      btn2.onclick = () => {document.getElementByyId('msg-input').value = btn2.textContent; sendMessage();};
+      
       choicesEl.appendChild(btn1);
       choicesEl.appendChild(btn2);
       row.appendChild(choicesEl);
