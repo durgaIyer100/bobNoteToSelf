@@ -76,7 +76,7 @@
 <div class="page">
 
   <div class="report-header">
-    <div class="label">IBM Bob · Task Session Report · v11</div>
+    <div class="label">IBM Bob · Task Session Report · v12</div>
     <h1>Note to Self — AI-Powered Personal Chat App</h1>
     <div class="meta">
       <span><strong>Project:</strong> bobNoteToSelf</span>
@@ -91,15 +91,15 @@
       <div class="gh-title">GitHub Repository</div>
       <div class="gh-url"><a href="https://github.com/durgaIyer100/bobNoteToSelf" target="_blank">https://github.com/durgaIyer100/bobNoteToSelf</a></div>
     </div>
-    <div class="commits-badge">16 commits · main</div>
+    <div class="commits-badge">17 commits · main</div>
   </div>
 
   <div class="section">
     <h2>Session at a Glance</h2>
     <div class="summary-grid">
-      <div class="sum-card"><div class="val">28</div><div class="lbl">Sub-tasks completed</div></div>
-      <div class="sum-card"><div class="val">2,279</div><div class="lbl">Lines in index.html</div></div>
-      <div class="sum-card"><div class="val">16</div><div class="lbl">GitHub commits pushed</div></div>
+      <div class="sum-card"><div class="val">29</div><div class="lbl">Sub-tasks completed</div></div>
+      <div class="sum-card"><div class="val">2,308</div><div class="lbl">Lines in index.html</div></div>
+      <div class="sum-card"><div class="val">17</div><div class="lbl">GitHub commits pushed</div></div>
       <div class="sum-card"><div class="val">IBM Bob</div><div class="lbl">Built entirely with</div></div>
     </div>
   </div>
@@ -208,6 +208,21 @@
         </div>
       </div>
 
+      <div class="activity-day">
+        <div class="activity-date-col">
+          <div class="activity-dot"></div>
+          <div class="activity-date">Jul 15, 2025</div>
+          <div class="activity-line"></div>
+        </div>
+        <div class="activity-body">
+          <ul>
+            <li>Reworked yes/skip buttons — stripped <code>(yes / skip)</code> text from all step strings; guide now sends a separate choice bubble 2s after each step with <code>[Yes]</code> and <code>[Skip]</code> pill buttons</li>
+            <li>Added <code>pushChoiceBubble(type)</code> helper — pushes <code>{ guide: true, choices: 'yes-skip' | 'yes-no' }</code> message, filtered from localStorage via <code>persistChat()</code></li>
+            <li>Clicking a button calls <code>handleGuideChoice()</code> which triggers <code>sendMessage()</code>; choice bubble stripped from messages array on send (06216e0)</li>
+          </ul>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -239,6 +254,7 @@
         <tr><td>26</td><td>Guide opening — 3 varied bubbles</td><td>startGuide() split into openers/context/feeling pools, 3s gaps, guideTimers</td><td><span class="badge badge-done">Done</span></td></tr>
         <tr><td>27</td><td>Clickable yes/skip &amp; yes/no buttons</td><td>guide-choice-btn pills, renderMessages injection, handleGuideChoice()</td><td><span class="badge badge-done">Done</span></td></tr>
         <tr><td>28</td><td>Post-skip smart how-to replies</td><td>askAgent() override for guideDone + feature category match</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>29</td><td>Yes/skip choice bubble rework</td><td>Separate guide bubble 2s after each step; pushChoiceBubble(); persistChat filter; sendMessage strips choices</td><td><span class="badge badge-done">Done</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -247,6 +263,7 @@
   <div class="section">
     <h2>GitHub Commit History</h2>
     <ul class="commit-list">
+      <li><span class="commit-hash">06216e0</span><span class="commit-date">Jul 15, 2025</span><div><strong>fix: replace inline yes/skip buttons with separate choice bubble 2s after each step</strong></div></li>
       <li><span class="commit-hash">ad92562</span><span class="commit-date">Jul 15, 2025</span><div><strong>feat: split guide opening into 3 varied bubbles, add clickable yes/skip buttons, post-skip smart how-to replies</strong></div></li>
       <li><span class="commit-hash">8e6d53c</span><span class="commit-date">Jul 15, 2025</span><div><strong>Fix typos in README.md</strong></div></li>
       <li><span class="commit-hash">386b4cd</span><span class="commit-date">Jul 15, 2025</span><div><strong>Update README with project details and usage</strong></div></li>
@@ -300,11 +317,11 @@
     <table>
       <thead><tr><th>File</th><th>Role</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td><span class="file-tag">note-to-self/index.html</span></td><td>The app — fully self-contained single-file</td><td>2,279 lines · 6 localStorage keys · Flatpickr via CDN · 5 embedded screenshots</td></tr>
+        <tr><td><span class="file-tag">note-to-self/index.html</span></td><td>The app — fully self-contained single-file</td><td>2,308 lines · 6 localStorage keys · Flatpickr via CDN · 5 embedded screenshots</td></tr>
         <tr><td><span class="file-tag">Note-To-Self Screenshots/</span></td><td>Real screenshot captures for homepage cards</td><td>5 PNGs — Note-To-Self, Auto-Replies, Draw, Schedule, AI Guide</td></tr>
         <tr><td><span class="file-tag">homepage-new-cards-plan.md</span></td><td>Plan for Draw/Schedule/AI Guide cards</td><td>4 sub-tasks — all complete</td></tr>
         <tr><td><span class="file-tag">Plans/guide-ux-improvements-plan.md</span></td><td>Plan for guide UX improvements</td><td>3 sub-tasks — all complete</td></tr>
-        <tr><td><span class="file-tag">bob-task-session-report.html</span></td><td>This report</td><td>v11 — committed to GitHub</td></tr>
+        <tr><td><span class="file-tag">bob-task-session-report.html</span></td><td>This report</td><td>v12 — committed to GitHub</td></tr>
       </tbody>
     </table>
   </div>
