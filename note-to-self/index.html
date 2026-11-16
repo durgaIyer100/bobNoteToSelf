@@ -398,6 +398,15 @@ body { background-color: var(--background); color: var(--foreground); }
 .msg-bubble-reply     { border-bottom-left-radius:  0.25rem; background-color: var(--chat-reply); color: var(--chat-ink); }
 .msg-bubble-scheduled { border-bottom-left-radius:  0.25rem; background-color: var(--scheduled);  color: var(--scheduled-foreground); }
 .msg-bubble-guide     { border-bottom-left-radius:  0.25rem; background-color: var(--guide-bubble); color: var(--chat-ink); }
+.guide-choices { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.guide-choice-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0.3rem 1rem; font-size: 0.8rem; font-weight: 600;
+  border: 1.5px solid var(--accent); border-radius: 9999px;
+  background: transparent; color: var(--accent); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.guide-choice-btn:hover { background: var(--accent); color: #fff; }
 .msg-bubble img { max-width: 100%; border-radius: calc(var(--radius) + 2px); background-color: var(--background); display: block; }
 .msg-bubble p { white-space: pre-wrap; word-break: break-words; }
 .msg-footer {
@@ -1112,6 +1121,29 @@ function renderMessages() {
     footer.appendChild(time);
 
     bubble.appendChild(footer);
+
+    // Quick-reply pill buttons for yes/skip and yes/no prompts
+    if (m.guide) {
+      const isLast = messages.indexOf(m) === messages.length - 1;
+      const hasYesSkip = /\(yes \/ skip\)\s*$/.test(m.text);
+      const hasYesNo   = /\(yes \/ no\)\s*$/.test(m.text);
+      if (isLast && (hasYesSkip || hasYesNo)) {
+        const choicesEl = document.createElement('div');
+        choicesEl.className = 'guide-choices';
+        const btn1 = document.createElement('button');
+        btn1.className = 'guide-choice-btn';
+        btn1.textContent = 'Yes';
+        btn1.onclick = () => handleGuideChoice('yes');
+        const btn2 = document.createElement('button');
+        btn2.className = 'guide-choice-btn';
+        btn2.textContent = hasYesSkip ? 'Skip' : 'No';
+        btn2.onclick = () => handleGuideChoice(hasYesSkip ? 'skip' : 'no');
+        choicesEl.appendChild(btn1);
+        choicesEl.appendChild(btn2);
+        bubble.appendChild(choicesEl);
+      }
+    }
+
     row.appendChild(bubble);
 
     // Avatar (right side for user)
@@ -1453,20 +1485,50 @@ function onGuideToggle(enabled) {
 /* ── AI Onboarding Guide Agent ────────────────────────────────────────────── */
 function startGuide() {
   if (!guideEnabled || guideDone) return;
-  // First message: greet + ask how they're feeling + explain the Guide toggle
-  const greeting =
-    'Hi! 👋 Welcome to Note to Self — your private space to check in with yourself.\n\n' +
-    'Before we start: you\'ll see a small "Guide" toggle at the top-right of this screen. ' +
-    'You can turn it off any time for a fully private, unguided experience. ' +
-    'Everything stays on your device — I never see or store what you write. 🔒\n\n' +
-    'Now — how are you feeling today? 🙂';
-  pushGuide(greeting, () => { awaitingFeelingReply = true; });
+
+  const openers = [
+    'Hi! 👋 Welcome to Note to Self — your private space to check in with yourself.',
+    'Hey there! 🌿 Welcome to Note to Self — a quiet little space that\'s just for you.',
+    'Hello! ✨ This is Note to Self — your personal space to check in whenever you need.',
+    'Hi! 💙 Welcome — Note to Self is your private corner to talk to yourself, honestly.',
+  ];
+  const contextLines = [
+    'Before we start: you\'ll see a small "Guide" toggle at the top-right of this screen. You can turn it off any time for a fully private, unguided experience. Everything stays on your device — I never see or store what you write. 🔒',
+    'Quick note: there\'s a "Guide" toggle near the top of the screen. Turn it off whenever you want a fully private experience — no interruptions. Nothing you write ever leaves your device. 🔒',
+    'One thing to know: you can always toggle the Guide off at the top of the screen if you\'d rather explore alone. Everything here is stored only on your device — completely private. 🔒',
+  ];
+  const feelingAsks = [
+    'Now — how are you feeling today? 🙂',
+    'So — how are you doing right now? 🌱',
+    'Let\'s start simple — what\'s on your mind today? 💭',
+  ];
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const opener      = pick(openers);
+  const contextLine = pick(contextLines);
+  const feelingAsk  = pick(feelingAsks);
+
+  guideTimers.push(setTimeout(() => {
+    pushGuide(opener); renderMessages(); persistChat();
+  }, 0));
+  guideTimers.push(setTimeout(() => {
+    pushGuide(contextLine); renderMessages(); persistChat();
+  }, 3000));
+  guideTimers.push(setTimeout(() => {
+    pushGuide(feelingAsk); awaitingFeelingReply = true; renderMessages(); persistChat();
+  }, 6000));
 }
 
 function pushGuide(text, cb) {
   pushMsg({ text, guide: true });
   renderMessages();
   if (cb) cb();
+}
+
+function handleGuideChoice(value) {
+  const inp = document.getElementById('chat-input');
+  inp.value = value;
+  sendMessage();
 }
 
 // ── Step sets for each feature walkthrough ─────────────────────────────────
@@ -2177,6 +2239,17 @@ function askAgent(input) {
       /^(I hear you\.|That sounds|Sending you)/,
       'I really hear you —'
     );
+  }
+
+  // 3b. Post-skip smart how-to override: richer targeted replies after onboarding skip
+  const howToReplies = {
+    'schedule':   'Sure! Tap the ⏰ Schedule button in the toolbar below. Pick a future date and time, type your message as normal, then hit Send — it\'ll be held and delivered at exactly the time you chose. I\'ll open the scheduler for you now. 🗓️',
+    'auto-reply': 'Of course! Tap the 💬 Auto-Replies button in the toolbar. Add a keyword (like a mood word) and a kind message to yourself, then tap "Add auto-reply" and Save. Next time you type that keyword, your message arrives automatically. 💬 Opening the panel now!',
+    'draw':       'Easy! Tap the ✏️ Draw button in the toolbar. Use your finger or mouse to draw on the canvas, pick an optional category, then tap Send — your drawing posts as a chat bubble. 🎨 Opening the canvas now!',
+    'app-help':   'The AI Guide is on by default — it\'s the ✨ assistant that walks you through features and responds in chat. You can toggle it on or off using the Guide switch near the top of the screen. With it on, just ask me anything and I\'ll help! 🙂',
+  };
+  if (guideDone && howToReplies[entry.category]) {
+    generated = howToReplies[entry.category];
   }
 
   // 4. Context stitch for conversational continuity
