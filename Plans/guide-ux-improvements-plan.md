@@ -45,35 +45,43 @@ Right now `startGuide()` sends one large greeting as a single bubble. The goal i
 
 ---
 
-### Sub-Task 2 — Clickable yes/skip (and yes/no) quick-reply buttons
+### Sub-Task 2 — Clickable yes/skip (and yes/no) as a separate follow-up bubble
 
-**Status:** `[ ] pending`
+**Status:** `[ ] pending` *(previous attempt replaced — new approach)*
 
-**Intent:**
-Whenever the guide sends a message ending in `(yes / skip)` or `(yes / no)`, show clickable pill buttons beneath that bubble so the user does not have to type. Clicking a button should behave identically to typing that word and hitting Send.
+**What went wrong with the first attempt:**
+Buttons were injected inside the step bubble itself. The `(yes / skip)` text was still visible in the message, so the UI was confusing — users still felt like they had to type. The fix needs a fundamentally different approach.
+
+**New design:**
+1. Strip `\n\nReady for the next step? (yes / skip)` (and `(yes / no)` equivalents) entirely from every step message string — the step message just says what to do, cleanly.
+2. After every step message is pushed, automatically send a **second guide bubble 2 seconds later** that contains **only the choice buttons** — no text. This bubble is a special `{ guide: true, choices: 'yes-skip' }` or `{ guide: true, choices: 'yes-no' }` message object (not a text message).
+3. The choice bubble renders as a small pill-button row (no avatar text, no message text), just the two buttons side by side.
+4. Clicking Yes or Skip fires `handleGuideChoice(value)` exactly as before — sets input value, calls `sendMessage()`.
+5. The choice bubble is `{ guide: true, choices: ... }` so it is never persisted to localStorage (or if it is, it renders harmlessly as an empty bubble on reload — choices are only meaningful in the live session).
 
 **Expected Outcomes:**
-- After any guide bubble whose text ends with `(yes / skip)` or `(yes / no)`, two styled pill buttons appear directly in the chat (not a floating bar).
-- Clicking a button posts the user's typed message (shows in chat as a normal user bubble), then processes the choice through the existing `advanceOnboarding()` / `sendMessage()` logic.
-- Buttons disappear as soon as one is clicked (they are part of that specific bubble's render, not a persistent UI element).
-- The input field still works as before — typing is not disabled.
-
-**Design note:**
-The buttons are rendered as part of the `renderMessages()` output for that specific guide message. When a new message is added to the chat (by user or guide), the button row is naturally replaced/removed because the whole list re-renders.
+- Each step message text is clean — no `(yes / skip)` suffix visible to the user.
+- 2 seconds after each step, a fresh bubble appears containing only **Yes** and **Skip** (or **Yes** and **No**) pill buttons.
+- Clicking either button behaves identically to typing that word and hitting Send.
+- The choice bubble disappears naturally when `renderMessages()` re-renders after the user's reply is added.
+- Typing in the input field still works as a fallback.
 
 **Todo List:**
-1. In the CSS section, add a `.guide-choices` container style and `.guide-choice-btn` pill button style (small, rounded, accent-colored, inline-flex).
-2. In `renderMessages()`, after rendering a guide message bubble, detect if `m.text` ends with `(yes / skip)` or `(yes / no)` and if it's the last guide message. If so, append a `.guide-choices` div with the two buttons inside the bubble wrapper.
-3. Add a `handleGuideChoice(value)` JS function that:
-   a. Removes all `.guide-choices` elements from the DOM.
-   b. Sets `inp.value = value` and calls `sendMessage()`.
-4. Wire each button's `onclick` to `handleGuideChoice('yes')` / `handleGuideChoice('skip')` or `handleGuideChoice('no')`.
+1. **Strip the prompt suffixes from all step strings** — in `getFeatureSteps()` (line ~1535) and `runGuideResponse()` (line ~1574), remove every `\n\nReady for the next step? (yes / skip)` and `(yes / no)` trailer from each string. Keep the step content only.
+2. **Also strip them from `advanceOnboarding()`** — the "would you like to walk you through X instead? (yes / no)" prompt text should lose its `(yes / no)` suffix too.
+3. **Remove the old inline-button code from `renderMessages()`** — delete the block added in the previous attempt (lines ~1125–1145) that appended buttons inside the bubble. Replace it with logic that renders a `choices` bubble: if `m.guide && m.choices`, render a `.guide-choices` div with the two pill buttons (no text, no avatar label needed), then skip the normal text/footer rendering for that message.
+4. **Add a `pushChoiceBubble(type)` helper** — `type` is `'yes-skip'` or `'yes-no'`. It calls `pushMsg({ guide: true, choices: type })` then `renderMessages()`. **Do not persist choice bubbles** — filter them out in `persistChat()` so they never get saved to localStorage.
+5. **Call `pushChoiceBubble` 2 seconds after every step push** — anywhere `pushGuide(stepText)` is called inside `advanceOnboarding()`, `runGuideResponse()`, and the switch-feature prompt, add a `setTimeout(() => { pushChoiceBubble('yes-skip'); renderMessages(); }, 2000)` immediately after. For yes/no prompts use `'yes-no'`.
+6. **`handleGuideChoice(value)`** — already exists; no change needed. It sets `inp.value = value` and calls `sendMessage()`.
 
 **Relevant Context:**
-- `renderMessages()` — the main render loop (search for `pushGuide` renders)
-- Guide messages are tagged with `m.guide === true`
-- `sendMessage()` at line 1199 — this is what clicking effectively calls
-- Existing CSS uses CSS custom properties (e.g. `--accent`, `--surface`) for theming
+- `getFeatureSteps()` at line ~1535 — step strings with `(yes / skip)` suffixes to strip
+- `runGuideResponse()` at line ~1574 — empathy message also has `\n\nReady for the next step? (yes / skip)`
+- `advanceOnboarding()` at line ~1613 — where steps are pushed and yes/no switch prompts are sent
+- `renderMessages()` at line 1042 — where `m.guide && m.choices` rendering needs to be added
+- `persistChat()` — filter out `m.choices` messages before saving
+- `handleGuideChoice()` at line ~1527 — no change needed
+- Existing CSS `.guide-choices` and `.guide-choice-btn` are already in place from the previous attempt — reuse them
 
 ---
 

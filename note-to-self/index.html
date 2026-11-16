@@ -1057,6 +1057,34 @@ function renderMessages() {
   Array.from(list.querySelectorAll('.msg-row')).forEach(el => el.remove());
 
   messages.forEach(m => {
+    // Choice bubble — renders only the pill buttons, no text
+    if (m.guide && m.choices) {
+      const row = document.createElement('div');
+      row.className = 'msg-row msg-row-left';
+      row.dataset.id = m.id;
+      const av = document.createElement('span');
+      av.className = 'avatar avatar-sm';
+      av.style.background = 'var(--guide-avatar)';
+      av.setAttribute('aria-label', 'Your guide');
+      av.textContent = '✨';
+      row.appendChild(av);
+      const choicesEl = document.createElement('div');
+      choicesEl.className = 'guide-choices';
+      const btn1 = document.createElement('button');
+      btn1.className = 'guide-choice-btn';
+      btn1.textContent = 'Yes';
+      btn1.onclick = () => handleGuideChoice('yes');
+      const btn2 = document.createElement('button');
+      btn2.className = 'guide-choice-btn';
+      btn2.textContent = m.choices === 'yes-skip' ? 'Skip' : 'No';
+      btn2.onclick = () => handleGuideChoice(m.choices === 'yes-skip' ? 'skip' : 'no');
+      choicesEl.appendChild(btn1);
+      choicesEl.appendChild(btn2);
+      row.appendChild(choicesEl);
+      list.appendChild(row);
+      return;
+    }
+
     const isLeft = m.auto || m.scheduled || m.guide;
     const row = document.createElement('div');
     row.className = 'msg-row ' + (isLeft ? 'msg-row-left' : 'msg-row-right');
@@ -1121,29 +1149,6 @@ function renderMessages() {
     footer.appendChild(time);
 
     bubble.appendChild(footer);
-
-    // Quick-reply pill buttons for yes/skip and yes/no prompts
-    if (m.guide) {
-      const isLast = messages.indexOf(m) === messages.length - 1;
-      const hasYesSkip = /\(yes \/ skip\)\s*$/.test(m.text);
-      const hasYesNo   = /\(yes \/ no\)\s*$/.test(m.text);
-      if (isLast && (hasYesSkip || hasYesNo)) {
-        const choicesEl = document.createElement('div');
-        choicesEl.className = 'guide-choices';
-        const btn1 = document.createElement('button');
-        btn1.className = 'guide-choice-btn';
-        btn1.textContent = 'Yes';
-        btn1.onclick = () => handleGuideChoice('yes');
-        const btn2 = document.createElement('button');
-        btn2.className = 'guide-choice-btn';
-        btn2.textContent = hasYesSkip ? 'Skip' : 'No';
-        btn2.onclick = () => handleGuideChoice(hasYesSkip ? 'skip' : 'no');
-        choicesEl.appendChild(btn1);
-        choicesEl.appendChild(btn2);
-        bubble.appendChild(choicesEl);
-      }
-    }
-
     row.appendChild(bubble);
 
     // Avatar (right side for user)
@@ -1227,10 +1232,12 @@ let onboardingSteps = [];
 let pendingSwitchFeature = null;
 
 function sendMessage(e) {
-  e.preventDefault();
+  if (e) e.preventDefault();
   const inp = document.getElementById('msg-input');
   const trimmed = inp.value.trim();
   if (!trimmed) return;
+  // Remove any pending choice bubble as soon as user sends a message
+  messages = messages.filter(m => !m.choices);
 
   const whenVal = document.getElementById('schedule-input').value;
 
@@ -1373,7 +1380,9 @@ function persistChat() {
   try {
     if (saveEnabled) {
       localStorage.setItem(SAVE_KEY, 'true');
-      localStorage.setItem(DATA_KEY, JSON.stringify({ messages, scheduled }));
+      // Strip transient choice bubbles — they are session-only and must not be persisted
+      const persistable = messages.filter(m => !m.choices);
+      localStorage.setItem(DATA_KEY, JSON.stringify({ messages: persistable, scheduled }));
     } else {
       // No saving — wipe all message + guide-done cache so every session starts fresh
       localStorage.removeItem(SAVE_KEY);
@@ -1531,31 +1540,38 @@ function handleGuideChoice(value) {
   sendMessage();
 }
 
+function pushChoiceBubble(type) {
+  // type: 'yes-skip' | 'yes-no'
+  // Filter any existing unpersisted choice bubble first so only one shows at a time
+  messages = messages.filter(m => !m.choices);
+  pushMsg({ guide: true, choices: type, text: '' });
+}
+
 // ── Step sets for each feature walkthrough ─────────────────────────────────
 function getFeatureSteps(feature) {
   const kw = feelingWord || 'sad';
   const features = {
     'auto-reply': [
-      'Step 1 of 3 — Tap the 💬 Auto-Replies button in the toolbar below to open the panel.\n\nReady for the next step? (yes / skip)',
-      'Step 2 of 3 — In the Keywords field type a word that triggers the reply (like "' + kw + '"). In the Message field write something kind to yourself.\n\nReady for the next step? (yes / skip)',
-      'Step 3 of 3 — Tap "Add auto-reply", then "Save". Close the panel and type your keyword in chat to test it.\n\nReady for the next step? (yes / skip)',
+      'Step 1 of 3 — Tap the 💬 Auto-Replies button in the toolbar below to open the panel.',
+      'Step 2 of 3 — In the Keywords field type a word that triggers the reply (like "' + kw + '"). In the Message field write something kind to yourself.',
+      'Step 3 of 3 — Tap "Add auto-reply", then "Save". Close the panel and type your keyword in chat to test it.',
       'You\'re all set! 🙌 Any time you type "' + kw + '" your kind message arrives automatically.\n\nWant me to walk you through another feature? Just ask!',
     ],
     'schedule': [
-      'Step 1 of 3 — Tap the ⏰ Schedule button in the toolbar. A date and time picker will appear above the input box.\n\nReady for the next step? (yes / skip)',
-      'Step 2 of 3 — Pick a future date and time, then type your message in the box as normal.\n\nReady for the next step? (yes / skip)',
-      'Step 3 of 3 — Hit Send. Your message is held and delivered at the exact time you chose.\n\nReady for the next step? (yes / skip)',
+      'Step 1 of 3 — Tap the ⏰ Schedule button in the toolbar. A date and time picker will appear above the input box.',
+      'Step 2 of 3 — Pick a future date and time, then type your message in the box as normal.',
+      'Step 3 of 3 — Hit Send. Your message is held and delivered at the exact time you chose.',
       'Done! 🙌 Your message will appear in chat right on schedule.\n\nWant me to walk you through another feature? Just ask!',
     ],
     'draw': [
-      'Step 1 of 3 — Tap the ✏️ Draw button in the toolbar. A canvas will open.\n\nReady for the next step? (yes / skip)',
-      'Step 2 of 3 — Draw anything using your finger or mouse. Use the category selector to label it (e.g. "Mood", "Idea").\n\nReady for the next step? (yes / skip)',
-      'Step 3 of 3 — Tap "Send" to post your drawing as a chat bubble (or "Schedule" to send it later).\n\nReady for the next step? (yes / skip)',
+      'Step 1 of 3 — Tap the ✏️ Draw button in the toolbar. A canvas will open.',
+      'Step 2 of 3 — Draw anything using your finger or mouse. Use the category selector to label it (e.g. "Mood", "Idea").',
+      'Step 3 of 3 — Tap "Send" to post your drawing as a chat bubble (or "Schedule" to send it later).',
       'Nice! 🎨 Your drawing is in the chat.\n\nWant me to walk you through another feature? Just ask!',
     ],
     'settings': [
-      'Step 1 of 2 — Tap the ⚙️ Settings icon in the top-right of the header.\n\nReady for the next step? (yes / skip)',
-      'Step 2 of 2 — You\'ll see two options:\n• Save messages on this device — keeps your chat between visits\n• Clear all messages — wipes the chat\n\nToggle "Save messages" on to keep your notes. Ready for the next step? (yes / skip)',
+      'Step 1 of 2 — Tap the ⚙️ Settings icon in the top-right of the header.',
+      'Step 2 of 2 — You\'ll see two options:\n• Save messages on this device — keeps your chat between visits\n• Clear all messages — wipes the chat\n\nToggle "Save messages" on to keep your notes.',
       'All done! 🔒 Your notes stay private and on your device only.\n\nWant me to walk you through another feature? Just ask!',
     ],
   };
@@ -1593,7 +1609,7 @@ function runGuideResponse(input) {
   const featureNames  = { 'schedule': 'Schedule', 'draw': 'Draw', 'settings': 'Settings', 'auto-reply': 'Auto-Reply' };
 
   onboardingSteps = [
-    empathy[tone] + '\n\nReady for the next step? (yes / skip)',
+    empathy[tone],
     ...getFeatureSteps('auto-reply'),
   ];
   onboardingStep = 0;
@@ -1602,10 +1618,12 @@ function runGuideResponse(input) {
     // If feeling reply mentioned a different feature, offer to switch before starting
     if (featureIntent && featureIntent !== 'auto-reply') {
       pendingSwitchFeature = featureIntent;
-      pushGuide(empathy[tone] + '\n\nWould you like me to walk you through ' + featureNames[featureIntent] + ' instead? (yes / no)');
+      pushGuide(empathy[tone] + '\n\nWould you like me to walk you through ' + featureNames[featureIntent] + ' instead?');
+      setTimeout(() => { pushChoiceBubble('yes-no'); renderMessages(); persistChat(); }, 2000);
     } else {
       pushGuide(onboardingSteps[0]);
       onboardingStep = 1;
+      setTimeout(() => { pushChoiceBubble('yes-skip'); renderMessages(); persistChat(); }, 2000);
     }
     renderMessages();
     persistChat();
@@ -1645,6 +1663,7 @@ function advanceOnboarding(raw) {
         pushGuide(onboardingSteps[0]);
         onboardingStep = 1;
         renderMessages(); persistChat();
+        setTimeout(() => { pushChoiceBubble('yes-skip'); renderMessages(); persistChat(); }, 2000);
       }, 700);
       return;
     }
@@ -1654,6 +1673,7 @@ function advanceOnboarding(raw) {
         pushGuide(onboardingSteps[0]);
         onboardingStep = 1;
         renderMessages(); persistChat();
+        setTimeout(() => { pushChoiceBubble('yes-skip'); renderMessages(); persistChat(); }, 2000);
       }, 700);
       return;
     }
@@ -1662,6 +1682,7 @@ function advanceOnboarding(raw) {
       const featureNames = { 'schedule': 'Schedule', 'draw': 'Draw', 'settings': 'Settings', 'auto-reply': 'Auto-Reply' };
       pushGuide('Just reply yes or no — would you like me to walk you through ' + featureNames[pendingSwitchFeature] + '?');
       renderMessages(); persistChat();
+      setTimeout(() => { pushChoiceBubble('yes-no'); renderMessages(); persistChat(); }, 2000);
     }, 700);
     return;
   }
@@ -1734,8 +1755,12 @@ function advanceOnboarding(raw) {
       pushGuide(onboardingSteps[onboardingStep] || 'Got it!');
       onboardingStep++;
       pendingSwitchFeature = featureIntent;
-      const msg = '\n\nWould you like me to walk you through ' + featureNames[featureIntent] + ' instead? (yes / no)';
-      setTimeout(() => { pushGuide(msg.trim()); renderMessages(); persistChat(); }, 800);
+      const switchMsg = 'Would you like me to walk you through ' + featureNames[featureIntent] + ' instead?';
+      setTimeout(() => {
+        pushGuide(switchMsg);
+        renderMessages(); persistChat();
+        setTimeout(() => { pushChoiceBubble('yes-no'); renderMessages(); persistChat(); }, 2000);
+      }, 800);
     }, 900);
     guideTimers.push(t);
     return;
@@ -1752,10 +1777,14 @@ function advanceOnboarding(raw) {
   const t = setTimeout(() => {
     pushGuide(onboardingSteps[onboardingStep]);
     onboardingStep++;
-    if (onboardingStep >= onboardingSteps.length) {
+    const isFinalStep = onboardingStep >= onboardingSteps.length;
+    if (isFinalStep) {
       if (saveEnabled) localStorage.setItem(GUIDE_DONE_KEY, 'true');
       guideDone = true;
       onboardingSteps = [];
+    } else {
+      // Not the final message — show choice bubble 2s later
+      setTimeout(() => { pushChoiceBubble('yes-skip'); renderMessages(); persistChat(); }, 2000);
     }
     renderMessages();
     persistChat();
