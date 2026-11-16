@@ -76,7 +76,7 @@
 <div class="page">
 
   <div class="report-header">
-    <div class="label">IBM Bob · Task Session Report · v10</div>
+    <div class="label">IBM Bob · Task Session Report · v11</div>
     <h1>Note to Self — AI-Powered Personal Chat App</h1>
     <div class="meta">
       <span><strong>Project:</strong> bobNoteToSelf</span>
@@ -91,15 +91,15 @@
       <div class="gh-title">GitHub Repository</div>
       <div class="gh-url"><a href="https://github.com/durgaIyer100/bobNoteToSelf" target="_blank">https://github.com/durgaIyer100/bobNoteToSelf</a></div>
     </div>
-    <div class="commits-badge">12 commits · main</div>
+    <div class="commits-badge">16 commits · main</div>
   </div>
 
   <div class="section">
     <h2>Session at a Glance</h2>
     <div class="summary-grid">
-      <div class="sum-card"><div class="val">25</div><div class="lbl">Sub-tasks completed</div></div>
-      <div class="sum-card"><div class="val">2,206</div><div class="lbl">Lines in index.html</div></div>
-      <div class="sum-card"><div class="val">12</div><div class="lbl">GitHub commits pushed</div></div>
+      <div class="sum-card"><div class="val">28</div><div class="lbl">Sub-tasks completed</div></div>
+      <div class="sum-card"><div class="val">2,279</div><div class="lbl">Lines in index.html</div></div>
+      <div class="sum-card"><div class="val">16</div><div class="lbl">GitHub commits pushed</div></div>
       <div class="sum-card"><div class="val">IBM Bob</div><div class="lbl">Built entirely with</div></div>
     </div>
   </div>
@@ -193,6 +193,21 @@
         </div>
       </div>
 
+      <div class="activity-day">
+        <div class="activity-date-col">
+          <div class="activity-dot"></div>
+          <div class="activity-date">Jul 15, 2025</div>
+          <div class="activity-line"></div>
+        </div>
+        <div class="activity-body">
+          <ul>
+            <li>Split guide opening into 3 sequential bubbles with 3-second gaps — varied randomly each session using <code>openers[]</code>, <code>contextLines[]</code>, <code>feelingAsks[]</code> pools</li>
+            <li>Added clickable yes/skip and yes/no pill buttons — render inline after any guide prompt ending in <code>(yes / skip)</code> or <code>(yes / no)</code>; clicking posts the choice as a user message via <code>handleGuideChoice()</code></li>
+            <li>Added post-skip smart how-to replies — after skipping onboarding, asking about schedule/auto-replies/draw/AI guide returns a targeted feature summary and auto-opens the relevant panel (ad92562)</li>
+          </ul>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -221,6 +236,9 @@
         <tr><td>10</td><td>Homepage How-it-works Cards</td><td>Draw, Schedule, AI Guide cards with real screenshots; horizontal row layout; 50/50 split</td><td><span class="badge badge-done">Done</span></td></tr>
         <tr><td>11</td><td>UI Polish — scrollbar, toolbar, header</td><td>Themed scrollbar, centred toolbar, toggle repositioned, header balanced</td><td><span class="badge badge-done">Done</span></td></tr>
         <tr><td>—</td><td>Screenshot zoom fix</td><td>object-fit:contain on Auto-Replies, Draw, Schedule cards</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>26</td><td>Guide opening — 3 varied bubbles</td><td>startGuide() split into openers/context/feeling pools, 3s gaps, guideTimers</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>27</td><td>Clickable yes/skip &amp; yes/no buttons</td><td>guide-choice-btn pills, renderMessages injection, handleGuideChoice()</td><td><span class="badge badge-done">Done</span></td></tr>
+        <tr><td>28</td><td>Post-skip smart how-to replies</td><td>askAgent() override for guideDone + feature category match</td><td><span class="badge badge-done">Done</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -229,6 +247,10 @@
   <div class="section">
     <h2>GitHub Commit History</h2>
     <ul class="commit-list">
+      <li><span class="commit-hash">ad92562</span><span class="commit-date">Jul 15, 2025</span><div><strong>feat: split guide opening into 3 varied bubbles, add clickable yes/skip buttons, post-skip smart how-to replies</strong></div></li>
+      <li><span class="commit-hash">8e6d53c</span><span class="commit-date">Jul 15, 2025</span><div><strong>Fix typos in README.md</strong></div></li>
+      <li><span class="commit-hash">386b4cd</span><span class="commit-date">Jul 15, 2025</span><div><strong>Update README with project details and usage</strong></div></li>
+      <li><span class="commit-hash">1b43601</span><span class="commit-date">Jul 15, 2025</span><div><strong>Delete note-to-self-code.zip</strong></div></li>
       <li><span class="commit-hash">7e1a0d2</span><span class="commit-date">Nov 8, 2026</span><div><strong>Use object-fit:contain for Auto-Replies, Draw, and Schedule card screenshots</strong></div></li>
       <li><span class="commit-hash">bbdf62f</span><span class="commit-date">Nov 8, 2026</span><div><strong>Update Auto-Replies, Draw, and AI Guide screenshots; session report v9</strong></div></li>
       <li><span class="commit-hash">d2f69fa</span><span class="commit-date">Nov 8, 2026</span><div><strong>Update Note-To-Self screenshot, move Guide toggle below status line, fix header alignment</strong></div></li>
@@ -266,6 +288,9 @@
       <div class="feature-item"><div class="feature-dot"></div><div>Homepage How-it-works — 5 cards, row layout, real screenshots</div></div>
       <div class="feature-item"><div class="feature-dot"></div><div>Themed scrollbar — thin, transparent track, blends in both modes</div></div>
       <div class="feature-item"><div class="feature-dot"></div><div>Save-messages toggle — localStorage persist or fresh session</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Guide opening — 3 varied randomised bubbles with 3-second gaps</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Clickable yes/skip pill buttons — inline after every guide prompt</div></div>
+      <div class="feature-item"><div class="feature-dot"></div><div>Post-skip smart how-to replies — targeted feature walkthroughs after skip</div></div>
     </div>
   </div>
 
@@ -275,10 +300,11 @@
     <table>
       <thead><tr><th>File</th><th>Role</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td><span class="file-tag">note-to-self/index.html</span></td><td>The app — fully self-contained single-file</td><td>2,206 lines · 6 localStorage keys · Flatpickr via CDN · 5 embedded screenshots</td></tr>
+        <tr><td><span class="file-tag">note-to-self/index.html</span></td><td>The app — fully self-contained single-file</td><td>2,279 lines · 6 localStorage keys · Flatpickr via CDN · 5 embedded screenshots</td></tr>
         <tr><td><span class="file-tag">Note-To-Self Screenshots/</span></td><td>Real screenshot captures for homepage cards</td><td>5 PNGs — Note-To-Self, Auto-Replies, Draw, Schedule, AI Guide</td></tr>
         <tr><td><span class="file-tag">homepage-new-cards-plan.md</span></td><td>Plan for Draw/Schedule/AI Guide cards</td><td>4 sub-tasks — all complete</td></tr>
-        <tr><td><span class="file-tag">bob-task-session-report.html</span></td><td>This report</td><td>v10 — committed to GitHub</td></tr>
+        <tr><td><span class="file-tag">Plans/guide-ux-improvements-plan.md</span></td><td>Plan for guide UX improvements</td><td>3 sub-tasks — all complete</td></tr>
+        <tr><td><span class="file-tag">bob-task-session-report.html</span></td><td>This report</td><td>v11 — committed to GitHub</td></tr>
       </tbody>
     </table>
   </div>
